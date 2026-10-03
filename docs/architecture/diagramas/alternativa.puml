@@ -1,0 +1,71 @@
+@startuml
+' =====================================================================
+' EcoRecicla AQP — ALTERNATIVA DESCARTADA (E5)
+' Lab 04 · Caso 10 · Grupo 04
+' Segunda mejor alternativa de docs/architecture/matriz-decision.md
+' Validado en plantuml.com · Imagen exportada en img/alternativa.png
+' =====================================================================
+
+skinparam dpi 200
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam ArrowColor #37474F
+skinparam packageStyle rectangle
+
+title Alternativa A (DESCARTADA, 3,80): EcoRecicla AQP con monolito en capas
+
+actor "Vecino" as VE
+actor "Reciclador" as RE
+actor "Municipalidad" as MU
+
+package "MONOLITO EN CAPAS — un solo despliegue" {
+
+  component "Presentacion\nAPI REST + PWA" as P #E3F2FD
+
+  component "Logica de negocio\n(sin limites entre modulos)\n\n• Solicitudes\n• Rutas\n• Puntos y canjes\n• Distritos y reglas\n• Reportes\n• Notificaciones" as L #FFF3CD
+
+  component "Acceso a datos\n(repositorios genericos)" as D #F3E5F5
+}
+
+database "PostgreSQL\n(esquema UNICO, no por modulo)" as DB #ECEFF1
+cloud "WhatsApp\nBusiness API" as WA #F2F2F2
+cloud "Motor de ruteo\nOSRM" as RT #F2F2F2
+
+VE --> P
+RE --> P
+MU --> P
+
+P --> L
+L --> D
+D --> DB
+L --> WA
+L --> RT
+
+note bottom of L
+  Puntaje 3,80 contra 4,05 del monolito modular (E2).
+  Es simple, barato y cabe en un VPS (R-03), pero TODA la
+  logica comparte una capa y un esquema unico: para dar de
+  alta un distrito hay que revisar Solicitudes, Rutas y
+  Puntos. Modificabilidad 2/5: no cumple QA-01 (<= 2 dias-persona).
+end note
+
+note right of D #FFEBEE
+  Riesgo principal: toda la base de datos
+  es un solo acoplamiento. Un cambio de una
+  regla de puntos obliga a migrar el esquema
+  compartido y puede romper el reporte (RF-05).
+end note
+
+legend right
+  |= Pieza |= Rol |
+  | <b>Presentacion</b> | Routes HTTP, PWA, validacion de entrada |
+  | <b>Logica de negocio</b> | Sin division: todo el dominio junto |
+  | <b>Acceso a datos</b> | Repositorios compartidos |
+  <i>Contraste: en la arquitectura ELEGIDA (monolito modular)
+  estos mismos elementos son 6 modulos que solo se hablan
+  por interfaces publicas.</i>
+endlegend
+
+@enduml
