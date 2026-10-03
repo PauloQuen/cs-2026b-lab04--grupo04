@@ -152,6 +152,8 @@ class DB datos
 | **E6** | Vista de despliegue con Python Diagrams | [`docs/architecture/diagramas/despliegue.py`](docs/architecture/diagramas/despliegue.py) |
 | **E7** | Bitácora de uso de IA | [`docs/architecture/bitacora-ia.md`](docs/architecture/bitacora-ia.md) |
 | **E8** | Este README y la revisión cruzada | `README.md` |
+| **IV** | Cuestionario oficial resuelto (8 preguntas) | [`docs/cuestionario.md`](docs/cuestionario.md) |
+| **Reto** | CI/CD: regeneración automática Mermaid (+2 pts) | [`docs/reto-opcional-ci.md`](docs/reto-opcional-ci.md) |
 
 **Matriz de decisión ponderada** (Figura 4):
 [`docs/architecture/diagramas/img/matriz-ponderada.png`](docs/architecture/diagramas/img/matriz-ponderada.png)
