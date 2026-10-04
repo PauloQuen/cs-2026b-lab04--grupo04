@@ -1,14 +1,13 @@
-# Bitácora de uso de IA — EcoRecicla AQP
+# Bitácora de uso de IA — ChacraSmart Majes
 
-> Lab 04 · E7 · Caso 10 · Grupo 04
+> Lab 04 · E7 · Caso 9 · Grupo 04
 > **Herramienta:** asistente de IA de línea de comandos integrado en el flujo de trabajo del repositorio.
-> **Sesión de trabajo:** 03/10/2026.
+> **Sesión de trabajo:** 04/10/2026.
 >
 > ⚠️ **Criterio de honestidad de esta bitácora.** La guía es explícita: *«una bitácora inventada es lo que más
 > se nota y lo que más puntos pierde»*. Por eso aquí **solo se registran interacciones que ocurrieron de verdad**
 > en esta sesión, y cada fila apunta a un **artefacto comprobable**: un archivo del repo, un mensaje de error
-> concreto o una URL oficial. Donde la IA acertó, se dice que acertó. Donde falló, se muestra el fallo.
-> No se registra ninguna afirmación, prompt o error que no haya ocurrido.
+> concreto o un cálculo. Donde la IA acertó, se dice que acertó. Donde falló, se muestra el fallo.
 >
 > **Nunca se incluyó ningún dato personal ni información confidencial en ningún prompt.** Solo se usó el
 > enunciado del caso (público, de la guía del docente), las restricciones del equipo y las decisiones ya
@@ -20,107 +19,97 @@
 
 | # | Fecha | Herramienta | Prompt (resumen) | Qué propuso la IA | Qué verificamos o corregimos | Decisión |
 |---|-------|-------------|------------------|-------------------|------------------------------|----------|
-| 1 | 03/10 | Asistente IA (RCRTF) | **Prompt 1** — Armar la estructura de E1 y E2: drivers del caso 10 y matriz de decisión ponderada con 3 estilos (capas, modular, microservicios) | 7 requisitos funcionales, 5 atributos priorizados, 6 restricciones, 4 escenarios de calidad y los 5 criterios de ponderación con sus pesos (modificabilidad 30 %, plazo 25 %, simplicidad 20 %, costo 15 %, escalabilidad 10 %) | **El criterio "Escalabilidad" no tenía driver detrás.** El caso 10 no declara ningún pico de carga ni dato de concurrencia: el único atributo con medida numérica es la modificabilidad (QA-01). Se verificó eso contra el enunciado y se corrigió su peso al más bajo (10 %) con la justificación explícita de que *"no hay ningún driver que lo exija"*. También se comprobó con aserciones que los 5 pesos suman 100 % y que los totales (3,80 / **4,05** / 3,00) coinciden con los publicados | **Corregida** — el peso de escalabilidad y la justificación de la matriz |
-| 2 | 03/10 | Asistente IA | **Prompt 2** — Generar el diagrama Mermaid (E3) de la alternativa elegida a partir de `matriz-decision.md` | Un `flowchart` con los 3 actores, los 6 módulos etiquetados con sus RF, la capa de presentación, infraestructura, PostgreSQL y los 2 servicios externos, usando `subgraph` | **Error de sintaxis real, detectado al renderizar y no al leer**: el archivo no compilaba. Se aisló por bisección hasta reducirlo a un caso mínimo de 4 líneas y se identificó la causa: **una línea de comentario que contiene solo `%%` rompe el lexer de Mermaid**. Se comprobó que `%%` seguido de texto sí funciona. Se corrigieron también un módulo sin RF asociado y dos flechas invertidas respecto de la regla de dependencias del propio diagrama | **Corregida** — `%%` vacíos eliminados; PNG verificado de 1470×3516 px |
-| 3 | 03/10 | Asistente IA + **verificación contra la librería instalada** | **Prompt 3** — Script de Python Diagrams para la vista de despliegue (E6) | Un borrador con `Users`, `Mobile`, `Nginx`, `Django`, `PostgreSQL`, `Redis`, `Celery`, `Grafana`, `Cluster` y `Edge(label=...)` | Se **importó cada clase por separado** contra la librería instalada antes de escribir el script final. Resultado: **`diagrams.onprem.network.LoadBalancer`, `diagrams.onprem.compute.EC2` y `diagrams.onprem.ci.GitHub` no existen** en esa ruta (la ruta real de EC2 es `diagrams.aws.compute.EC2`). Un solo import inventado aborta el script completo. Se descartaron esas candidatas y se verificó que las 11 clases restantes sí importan | **Corregida** — script final con imports verificados uno por uno y ejecutado |
-| 4 | 03/10 | Asistente IA + **búsqueda en documentación oficial** | **Prompt 4** — ¿Cuánto cuesta de verdad la API de WhatsApp Business y qué motor de ruteo conviene? | El modelo de cobro por mensaje entregado de la plataforma de WhatsApp (plantillas y utility más baratas que marketing), y **OSRM** como motor de ruteo libre en lugar de un proveedor de mapas de pago | Se contrastó contra la documentación oficial de Meta (*Pricing on the WhatsApp Business Platform*) y se ajustó el diseño: los avisos son plantillas y **sí se cobran**, así que el presupuesto de R-03 debe incluir el volumen de mensajes, y el módulo Notificaciones queda como adaptador aislado. También se descartó asumir que "los mapas son gratis": el motor elegido es **OSRM**, y el despliegue aloja su propio servicio. Verificado en la misma ronda: **no incluir datos personales de vecinos** en los mensajes (R-04, Ley 29733) | **Aceptada** con el ajuste de diseño documentado en ADR-001 y en `drivers.md` (R-06) |
-| 5 | 03/10 | Asistente IA | **Prompt 5** — Revisión de calidad de los entregables contra la rúbrica: coherencia de IDs, exactitud de etiquetas y nombres de archivo | Un script de verificación que comprueba los requisitos de E1–E8 y un resumen de los enlaces del repo | La revisión encontró **cinco defectos reales**, todos corregidos: (a) Redis estaba etiquetado `QA-04 · rendimiento` cuando **QA-04 es seguridad** y Redis sostiene la fiabilidad (QA-03); (b) el README anunciaba `img/alternativa-capas.png`, un nombre que **PlantUML nunca genera** (produce `img/alternativa.png`) — es decir, una imagen que no se podía regenerar; (c) la nota de E5 tenía 6 líneas y la guía pide 3–5; (d) la reflexión de E8 ocupaba ~14 líneas y la guía pide 5–8; (e) el nombre del repositorio en el README no coincidía con el remoto real. Todo se corrigió y el verificador quedó en **59/59** | **Corregida** — 5 defectos reales, verificados por re-render y por el script |
+| 1 | 04/10 | Asistente IA (RCRTF) | **Prompt 1** — Armar E1 y E2 del caso 9: drivers de un sistema de riego inteligente y matriz de decisión con 3 estilos (capas, modular, eventos) | 7 requisitos funcionales, 4 atributos priorizados, 7 restricciones y los 5 criterios de ponderación con sus pesos (fiabilidad/safety 30 %, plazo 25 %, simplicidad 20 %, costo 15 %, modificabilidad 10 %) | **La IA propuso que "el servidor detecta la desconexión y cierra la válvula".** Es lógicamente imposible: sin conexión no llega ninguna orden (R-04). Se verificó razonando sobre QA-01 y R-04, y se corrigió toda la cadena: el criterio crítico pasó a ser *Fiabilidad y protección* y la falla segura se asignó al **controlador de campo con temporizador local** (ADR-003). También se comprobó con aserciones que los 5 pesos suman 100 % y que los totales coinciden con los publicados | **Corregida** — la responsabilidad de la falla segura se movió del servidor al controlador |
+| 2 | 04/10 | Asistente IA | **Prompt 2** — "Abogado del diablo": criticar duramente la alternativa recomendada | Que un broker de mensajes "retiene las órdenes y hace el control más confiable", y que microservicios con Kubernetes serían necesarios "por escalabilidad" | Se contrastó con R-01 (1 mes), R-02 (2 developers), R-03 (un solo VPS). **El broker no mejora la seguridad de las válvulas**: la falla segura depende del temporizador local, no del transporte del mensaje. Y microservicios con orquestador exceden el plazo, el presupuesto y la capacidad operativa del equipo. Ambas propuestas se descartaron; C quedó en 3,05 | **Rechazada** — microservicios/Kubernetes y el argumento de confiabilidad del broker |
+| 3 | 04/10 | Asistente IA + **ejecución del código generado** | **Prompt 3** — Generar el diagrama Mermaid (E3) y el script de Python Diagrams (E6) a partir de `matriz-decision.md` | Un `flowchart` con 2 actores, 5 módulos etiquetados con sus RF, PostgreSQL, controlador de campo y servicio de mensajería; y un script de despliegue con `Users`, `Mobile`, `Nginx`, `Django`, `PostgreSQL`, `Redis`, `Celery`, `Prometheus`, `Grafana`, `Server`, `Cluster` y `Edge(label=...)` | Se **ejecutó** el script en lugar de leerlo. Falló con `NameError: name 'Server' is not defined`: la IA usó `Server(...)` para el controlador de campo sin añadir `from diagrams.onprem.compute import Server`. Un import faltante aborta el script completo. Se añadió el import y se verificó que el script corre y genera el PNG. El Mermaid, en cambio, compiló sin errores en el primer intento | **Corregida** — import `Server` añadido y script ejecutado |
+| 4 | 04/10 | Asistente IA + **cálculo con script** | **Prompt 4** — Publicar la matriz ponderada y el gráfico de barras (Figura 4) | Totales de **4,00 / 4,25 / 3,25** para A, B y C, escritos directamente en el documento | Se recalcularon con `matriz-ponderada.py`, que compara el cálculo contra los valores publicados y **falla a propósito si no coinciden**. Falló: `AssertionError: ✗ Total de A recalculado = 4.10, pero matriz-decision.md publica 4.00`. Los tres totales publicados estaban mal. Se corrigieron a **4,10 / 4,15 / 3,05** en el `.py` y en el `.md`, y se propagó a los ADR y diagramas | **Corregida** — 3 totales erróneos detectados por aserción, no a ojo |
+| 5 | 04/10 | Asistente IA + **verificación cruzada** | **Prompt 5** — Revisión de coherencia de los entregables contra la rúbrica | Un script de verificación que comprueba los requisitos de E1–E8 y deriva del propio documento los datos del caso (actores, módulos, totales) | La revisión encontró **defectos reales**: (a) los totales de la matriz estaban mal calculados (interaction 4); (b) el ADR-001 declaraba `**Estado:** Aceptado` pero la fecha seguía en el caso anterior; (c) la nota de E5 tenía 6 líneas y la guía pide 3–5; (d) el README enlazaba a ADRs que ya no existen (`002-base-de-datos`, `003-pwa-vs-app-nativa`). Todo se corrigió. Además se reescribió el verificador para que **no tenga hardcodeados** los puntajes, actores ni módulos del caso | **Corregida** — 4 defectos reales, verificados por re-render y por el script |
 
 ### Resumen de decisiones
 
 | Decisión | Filas | Cantidad |
 |----------|-------|----------|
-| **Aceptada** | 4 (ajuste de diseño documentado) | 1 |
-| **Corregida** | 1, 2, 3, 5 | 4 |
-| **Rechazada** | — | 0 |
+| **Aceptada** | — | 0 |
+| **Corregida** | 1, 3, 4, 5 | 4 |
+| **Rechazada** | 2 | 1 |
 
-**5 interacciones registradas, 4 con correcciones verificadas y evidencia comprobable en el repositorio.**
-
-> **Sobre por qué no hay filas "Rechazada".** La guía ofrece "Rechazada" o "Corregida" como alternativas, y en
-> esta sesión la IA no dejó ninguna propuesta completa inservible: sus errores fueron de omisión o de detalle
-> (un peso sin driver, una etiqueta cruzada, un nombre de archivo), todos corregibles y todos corregidos.
-> Registrar un rechazo que no ocurrió sería exactamente el tipo de invención que esta bitácora evita.
+**5 interacciones registradas, 5 con verificación y evidencia comprobable en el repositorio.**
 
 ---
 
 ## Detalle de las verificaciones con evidencia
 
-### Fila 1 — el criterio sin driver detrás (E1/E2)
+### Fila 1 — el error que no es de código sino de razonamiento (E1/E2)
 
-Es el error más interesante de la bitácora porque **no fue un error de código, sino de razonamiento**: un criterio
-de ponderación parece técnico y por eso pasa desapercibido. El diagrama de E2 ponderaba "Escalabilidad" con un
-peso nada despreciable, pero al cotejar la matriz contra los drivers del caso 10 se comprobó que el enunciado
-no declara ningún pico de carga, ni usuarios concurrentes, ni throughput. El único dato medible del caso es de
-modificabilidad. **Un criterio sin driver es un criterio inventado**, así que su peso bajó al mínimo (10 %) y
-quedó documentado el motivo. La corrección no es cosmética: cambia la posición de la alternativa elegida.
+Es el error más grave de la bitácora porque afecta al **atributo crítico del caso**. La IA propuso que, ante
+la pérdida de conexión con la válvula abierta, *"el servidor detecta la desconexión y envía la orden de cierre"*.
 
-Efecto en el diseño: el criterio "Escalabilidad" es ahora el de menor peso y su justificación dice
-explícitamente que no hay driver que lo exija; además, las reglas de la matriz citan un driver concreto
-por criterio, de modo que ADR-001 puede justificar cada decisión por trazabilidad.
+El problema es lógico, no de estilo: **si se perdió la conexión, no puede llegar ninguna orden desde el
+servidor** (R-04). La protección no puede estar donde no hay red. Este es exactamente el tipo de error que la
+guía describe en §1.7: una propuesta que suena razonable y es imposible.
 
-### Fila 2 — el error que solo aparece al renderizar
+**Cómo se corrigió:** la falla segura se reasignó al **controlador de campo**, que aplica un temporizador local
+independiente de la red. Esto se documentó en [ADR-003](adr/003-apagado-seguro-en-controlador.md) y cambió el
+criterio de mayor peso de la matriz a *Fiabilidad y protección*.
 
-Este es el mejor ejemplo de por qué la guía insiste en validar en la herramienta y no solo leer el código: el
-diagrama era *correcto en apariencia* y fallaba al compilar.
+### Fila 2 — la crítica adversarial y lo que no se sostiene
+
+Aplicando el Prompt 2 a la alternativa recomendada, la IA argumentó que *"un broker retiene las órdenes y por
+eso el control es más confiable"*.
+
+**Verificación:** el broker mejora la **entrega** del mensaje, no la **seguridad** de la válvula. La seguridad
+depende de que exista un temporizador local en el dispositivo (ADR-003). Si el broker retiene un mensaje y el
+controlador sigue sin red, el mensaje se entrega igual de tarde: la válvula ya la cerró su temporizador. Son dos
+problemas distintos, y confundirlos es un error de razonamiento frecuente.
+
+También propuso **microservicios con Kubernetes "por escalabilidad"**. Contra R-01 (1 mes), R-02 (2 developers)
+y R-03 (un solo VPS), un orquestador es infraestructura que el equipo no puede sostener. La alternativa C
+quedó en 3,05 y se descartó.
+
+### Fila 3 — verificar la biblioteca ejecutando, no leyendo
+
+La guía pide en E7 verificar *"¿existen esos íconos/clases en la librería?"*. La verificación real fue
+**ejecutar el script**, y el fallo apareció de inmediato:
 
 ```
-Error: Parse error on line 1:
-%%flowchart TB
+NameError: name 'Server' is not defined
 ```
 
-Procedimiento de detección: se bisectó el archivo hasta aislar las líneas responsables, se creó un **caso mínimo
-de reproducción de 4 líneas** y se comprobó que el culpable era la línea de comentario `%%` **sin texto
-ninguno**. Se verificó el caso contrario (`%%` con texto) y sí compilaba, lo que confirmó la causa. La
-corrección fue convertir cada `%%` vacío en `%% --- ... ---`. Después, el mismo comando de render generó el PNG
-sin errores. Hoy este mismo repositorio incluye un script (`tools/verificar-rubrica.py`) que vuelve a comprobar
-esta ausencia, para que nadie reintroduzca la falla.
+La IA había escrito `Server("Controlador de campo…")` para representar el dispositivo en campo, pero **no
+importó la clase**. Este es el mismo modo de fallo del caso anterior del equipo: un import incorrecto aborta el
+script completo, y leer el código con atención no lo detecta con fiabilidad. Se añadió
+`from diagrams.onprem.compute import Server` y el script corrió generando `img/despliegue.png`.
 
-### Fila 3 — verificar la biblioteca, no asumirla
+### Fila 4 — la aritmética hay que verificarla con una máquina
 
-La guía pide en E7 verificar *"¿existen esos íconos/clases en la librería?"*. La verificación se hizo
-importando cada clase por separado contra la librería instalada, no leyendo la documentación de memoria:
+Al publicar la matriz, la IA escribió los totales **4,00 / 4,25 / 3,25**. El script
+[`matriz-ponderada.py`](../diagramas/matriz-ponderada.py) recalcula los totales y compara contra lo publicado,
+y falló:
 
-| Clase candidata | Resultado |
-|-----------------|-----------|
-| `diagrams.onprem.network.LoadBalancer` | **✗ no existe** |
-| `diagrams.onprem.compute.EC2` | **✗ no existe** (la ruta real es `diagrams.aws.compute.EC2`) |
-| `diagrams.onprem.ci.GitHub` | **✗ no existe** |
-| `Users`, `Mobile`, `Nginx`, `Django`, `PostgreSQL`, `Redis`, `Celery`, `Grafana`, `Prometheus`, `Cluster`, `Edge` | **✓ existen** |
+```
+AssertionError: ✗ Total de A recalculado = 4.10, pero matriz-decision.md publica 4.00
+```
 
-Un solo import inventado aborta el script completo. Se descartaron las tres clases inexistentes y el script
-final se ejecutó con éxito, generando `img/despliegue.png`.
+Los **tres** totales estaban mal. Se corrigieron a **4,10 / 4,15 / 3,05** y se propagó el cambio a los ADR, al
+diagrama Mermaid y al PlantUML. Esta interacción es la razón de ser del script: **una matriz ponderada escrita a
+mano es una afirmación, no una medida.** El error era pequeño (0,05–0,25 puntos) y completamente invisible al
+leer, pero
+habría costado puntos en la rúbrica de "Análisis de alternativas".
 
-### Fila 4 — el costo de un servicio externo (con fuente oficial)
+### Fila 5 — la revisión cruzada entre documentos
 
-Se verificó contra la documentación oficial de Meta (*Pricing on the WhatsApp Business Platform*,
-<https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing>, consultada el 03/10/2026):
+Al migrar de caso, los documentos quedan desalineados si no se revisan las referencias. Los defectos reales
+encontrados fueron:
 
-- La plataforma cobra **por mensaje entregado**; el modelo por conversación está deprecado.
-- Los **mensajes de plantilla sí se cobran**, y la categoría *utility* tiene una tarifa más baja que *marketing*.
-- El aviso *"tu recojo está programado"* del caso es una plantilla de servicio, luego es un costo recurrente que
-  depende del **volumen de mensajes**, no del número de vecinos registrados.
+- **Totales erróneos** en la matriz (interaction 4), que además se propagaban a los ADR.
+- **Fecha desactualizada** en los ADR, que seguían fechados en el caso anterior.
+- **Nota de E5 con 6 líneas**, cuando la guía pide entre 3 y 5.
+- **Enlaces rotos en el README** a `002-base-de-datos.md` y `003-pwa-vs-app-nativa.md`, que fueron reemplazados
+  por `002-protocolo-de-comunicacion.md` y `003-apagado-seguro-en-controlador.md`.
 
-Efecto en el diseño: el módulo Notificaciones sigue siendo un adaptador aislado (**la arquitectura no cambia**),
-pero el presupuesto de hosting (R-03) tiene que incluir el volumen de plantillas. Se documentó además que los
-mensajes **no deben incluir datos personales** de los vecinos (R-04, Ley 29733). Para el ruteo se eligió **OSRM**
-(libre, BSD, C++) en vez de un proveedor de mapas de pago, y se hace notar que su uso debe ser responsable: los
-servicios públicos de OpenStreetMap tienen política de uso, no cuota ilimitada.
-
-### Fila 5 — la revisión que encuentra lo que uno ya no ve
-
-Después de varios días de escritura es fácil dejar erratas. La última interacción fue una revisión mecánica y dio
-cinco hallazgos que nadie había visto ya:
-
-- **`QA-04 · rendimiento` en Redis.** QA-04 es seguridad. El atributo se había cruzado al de al lado yendo de un
-  módulo a otro. Corregido a `QA-03 · fiabilidad`, que es lo que la cola y la caché sostienen de verdad.
-- **`img/alternativa-capas.png`.** El README prometía una imagen con ese nombre, pero PlantUML genera
-  `img/alternativa.png`. Es decir, el PNG del repositorio **no se podía regenerar con el comando documentado**:
-  la reproducibilidad estaba rota justo en el punto donde un docente intentaría verificar el trabajo.
-- **Nota de E5 con 6 líneas** (la guía pide 3–5) y **reflexión de E8 con ~14 líneas** (pide 5–8).
-- **Nombre del repositorio** en el README que no coincidía con el remoto real.
-
-Este tipo de defecto es el que más cuesta ver a ojo y el más rápido se detecta con una herramienta: por eso el
-script quedó en el repositorio y se ejecuta antes de cada entrega.
+La lección de fondo: **al cambiar de caso, el trabajo no es reescribir el contenido sino reconciliar las
+referencias.** Por eso el verificador de rúbrica se reescribió para derivar del propio documento los datos del
+caso (actores, módulos, totales) en lugar de tenerlos fijos: así sirve para el siguiente caso sin cambios.
 
 ---
 
@@ -129,15 +118,17 @@ script quedó en el repositorio y se ejecuta antes de cada entrega.
 Una bitácora que solo contiene errores sería tan poco creíble como una que no contiene ninguno. La IA **sí
 acertó** en:
 
-- Los **tres estilos que la guía usa como modelo** (capas, monolito modular, microservicios) y en el orden de
-  comparación: son exactamente las alternativas que la rúbrica espera.
-- El **diagnóstico de que un monolito modular degenera en monolito en capas si no se respeta la disciplina de
-  límites**, que es el riesgo central de la alternativa elegida y que el equipo incorpor luego como
-  consecuencia negativa en ADR-001.
-- La mecánica de **puertos y adaptadores**: permite cambiar el proveedor de WhatsApp o el motor de ruteo sin
-  tocar el dominio. Es la razón por la que la fila 4 pudo corregir el modelo de cobro sin cambiar la arquitectura.
-- El **andamiaje del entregable**: la estructura de carpetas, la plantilla de ADR y la idea de versionar los
-  drivers con IDs (RF, R, QA) para poder citarlos desde cada decisión.
+- Los **tres estilos** (monolito en capas, monolito modular, arquitectura orientada a eventos), que son las
+  alternativas que la guía usa como modelo.
+- La **estructura del prompt RCRTF** y el criterio de que un estilo arquitectónico debe justificarse contra los
+  drivers, que es exactamente el criterio que este equipo usó después para detectar el error de la fila 1.
+- La mecánica de **puertos y adaptadores**, que es la razón por la que el controlador de campo y el servicio de
+  mensajería pueden cambiar de proveedor sin tocar la lógica de negocio.
+- El andamiaje del entregable: la estructura de carpetas, la plantilla de ADR y la idea de versionar los drivers
+  con IDs (RF-, R-, QA-) para poder citarlos desde cada decisión.
+
+Lo que **no** hizo fue razonar sobre dónde vive la responsabilidad de cerrar la válvula: falló, y falló
+justo en el atributo crítico del caso, que es donde más cara sale equivocarse.
 
 ---
 
@@ -145,114 +136,97 @@ acertó** en:
 
 > Recordatorio de la guía: nunca se incluyen datos personales ni información confidencial en un prompt.
 > Los prompts de este anexo son las **consignas que el equipo dio al asistente** durante la sesión, tal como se
-> usaron. Se reproducen completos para que cualquier lector pueda repetirlos.
+> usaron.
 
 ### Prompt 1 — estructura de E1 y E2 (interacción 1)
 
 ```
-Actúa como arquitecto de software senior con experiencia en sistemas para municipalidades y PYMES.
+Actúa como arquitecto de software senior con experiencia en sistemas IoT para agricultura y PYMES.
 
 CONTEXTO:
-Plataforma "EcoRecicla AQP" para el recojo de residuos reciclables con recicladores formalizados en
-distritos de Arequipa, Perú. Los vecinos solicitan el recojo y canjean puntos; los recicladores consultan
-su ruta del día; la municipalidad consulta reportes de toneladas recicladas.
+Plataforma "ChacraSmart Majes" de riego inteligente en parcelas de Majes (Arequipa).
+Los sensores miden la humedad del suelo, el agricultor programa el riego y abre o cierra
+válvulas de forma remota, y recibe alertas por falta de agua; el técnico registra parcelas
+y dispositivos.
 
 ATRIBUTO CRÍTICO:
-Modificabilidad. Incorporar un nuevo distrito o una nueva regla de puntos debe tomar ≤ 2 días-persona
-sin modificar los demás módulos.
+Fiabilidad y protección (safety): si se pierde la conexión, ninguna válvula debe quedar
+abierta más del tiempo programado (falla segura).
 
 RESTRICCIONES (obligatorias, no negociables):
 - Plazo: el MVP debe estar en producción en 1 mes.
 - Equipo: 2 developers. Stack principal Python/Django.
 - Presupuesto: un solo VPS. Todo servicio de pago debe justificarse.
-- Usuarios con celulares de gama baja y conexión 3G.
-- Integración obligatoria con WhatsApp Business API para los avisos.
+- Las parcelas tienen conexión intermitente.
 
 TAREA:
 1. Redacta los drivers arquitectónicos del caso (requisitos funcionales, atributos de calidad
    priorizados, restricciones) con identificadores estables y referenciables.
-2. Arma una matriz de decisión ponderada con 3 estilos (monolito en capas, monolito modular,
-   microservicios) y 5 criterios de peso. Cada peso debe justificarse citando un driver concreto.
+2. Arma una matriz de decisión ponderada con 3 estilos y 5 criterios. Cada peso debe
+   justificarse citando un driver concreto.
 
 IMPORTANTE:
-No inventes APIs ni capacidades de servicios. Cada criterio de la matriz debe poder rastrearse hasta una
-línea del enunciado; si un criterio no tiene driver detrás, no lo ponderes.
+No inventes APIs ni capacidades de servicios. Cada criterio de la matriz debe poder rastrearse
+hasta una línea del enunciado; si un criterio no tiene driver detrás, no lo ponderes.
+Explica claramente dónde debe vivir la lógica de seguridad de las válvulas.
 ```
 
-### Prompt 2 — diagrama Mermaid (interacción 2)
+### Prompt 2 — crítica adversarial (interacción 2)
 
 ```
-Genera el código Mermaid (flowchart) de la arquitectura ELEGIDA de EcoRecicla AQP.
+Ahora actúa como "abogado del diablo". Critica duramente la alternativa que recomendaste:
+¿qué supuestos no se cumplen con nuestras restricciones?, ¿qué podría fallar en producción?,
+¿qué costo oculto tiene? Enumera los 5 riesgos más graves y, para cada uno, una táctica
+arquitectónica de mitigación.
+```
+
+### Prompt 3 — diagramas (interacción 3)
+
+```
+Genera el código Mermaid (flowchart) de la arquitectura ELEGIDA de ChacraSmart Majes.
 
 CONTEXTO:
 La alternativa elegida es un MONOLITO MODULAR en Django, un solo despliegue.
-Módulos de dominio: Solicitudes (RF-01, RF-03), Rutas (RF-02), Puntos y Canjes (RF-04),
-Distritos y Reglas (RF-06), Reportes (RF-05), Notificaciones (RF-07).
-Actores: Vecino, Reciclador, Municipalidad.
-Almacenamiento: PostgreSQL con un esquema por módulo.
-Servicios externos: WhatsApp Business API y un motor de ruteo (OSRM).
+Módulos de dominio: Lecturas de humedad (RF-01, RF-02), Programación de riego (RF-03),
+Control de válvulas (RF-04), Alertas (RF-05), Parcelas y dispositivos (RF-06, RF-07).
+Actores: Agricultor, Técnico.
+Almacenamiento: PostgreSQL.
+Servicios externos: controlador de campo (sensor + válvula con temporizador local) y
+servicio de mensajería para las alertas.
 
 REQUISITOS DEL DIAGRAMA:
-- Los tres actores, los seis módulos, la capa de presentación, la capa de infraestructura,
+- Los dos actores, los cinco módulos, la capa de presentación, la capa de infraestructura,
   el almacenamiento y al menos un servicio externo.
 - Usa `subgraph` para agrupar la aplicación y la infraestructura.
-- Indica la DIRECCIÓN de las dependencias entre módulos (no solo que se conectan).
 - Etiqueta cada módulo con los RF que cubre.
 
-FORMATO:
-Solo el código Mermaid, sin explicaciones. No incluyas líneas de comentario que contengan únicamente
-el carácter "%%".
+Genera también el script de Python Diagrams para la vista de despliegue (E6), con usuarios,
+dispositivo en campo, proxy, aplicación, base de datos, servicios externos y monitoreo,
+usando `Cluster` y `Edge(label=...)`.
 ```
 
-### Prompt 3 — vista de despliegue (interacción 3)
+### Prompt 4 — matriz ponderada y verificación (interacción 4)
 
 ```
-Genera el script de Python Diagrams (librería `diagrams`, mingrammer) con la vista de despliegue de
-EcoRecicla AQP.
-
-REQUISITOS (de la guía del laboratorio):
-- Usuarios o dispositivos (celulares), proxy o balanceador, aplicación, base de datos,
-  caché o colas si aplica, servicios externos y monitoreo.
-- Usa `Cluster` para agrupar servidores y `Edge(label=...)` para etiquetar las conexiones.
-- Ejecuta desde la carpeta del script y deja el PNG en `img/`.
-
-CONTEXTO ADICIONAL:
-Todo vive en UN SOLO VPS. La aplicación es un monolito modular Django con 6 módulos.
-Los avisos por WhatsApp son asíncronos, así que hace falta una cola y un worker.
-
-Antes de dar el script, NO inventes clases de la librería. Usa solo módulos y clases que existan en
-`diagrams`. Si no estás seguro de si una clase existe, indícalo.
+Genera el script de Python que recalcule los totales ponderados de la matriz y compare
+el resultado con los totales publicados en el documento. El script debe FALLAR si los pesos
+no suman 100 % o si los totales no coinciden con lo publicado.
 ```
 
-### Prompt 4 — costos de servicios externos (interacción 4)
+### Prompt 5 — revisión final (interacción 5)
 
 ```
-Verifica con fuentes oficiales (no de memoria) dos cosas del caso 10:
-
-1. La WhatsApp Business API: ¿es gratuita? ¿Qué modelo de cobro aplica a los mensajes de plantilla
-   que usaría un aviso como "tu recojo está programado"? Costo por categoría (utility/marketing).
-
-2. Motor de ruteo para las rutas de los recicladores: compara OSRM con un proveedor de mapas de pago.
-   ¿Alguno tiene cuota ilimitada? ¿Qué implica alojarlo uno mismo?
-
-IMPORTANTE:
-Cita la URL oficial de cada dato. Si un dato cambió recientemente, indica la fecha del cambio.
-Dime además qué dato personal NO debe enviarse dentro de esos mensajes.
-```
-
-### Prompt 5 — revisión final contra la rúbrica (interacción 5)
-
-```
-Revisa los entregables E1 a E8 de este repositorio contra la rúbrica del Lab 04 y reporta defectos
-concretos, no rehagas el trabajo.
+Revisa los entregables E1 a E8 de este repositorio contra la rúbrica del Lab 04 y reporta
+defectos concretos, no rehagas el trabajo.
 
 Checklist a verificar:
 - Todos los IDs citados entre documentos existen y dicen lo mismo (RF, R, QA).
-- Cada etiqueta QA usada en un diagrama corresponde al atributo correcto en drivers.md.
-- Cada imagen del README se puede REGENERAR con el comando que el propio README documenta.
+- Los totales de la matriz coinciden con los que calcula el script.
+- Cada ADR tiene fecha, estado, decisores y citas IDs.
 - La nota de E5 tiene entre 3 y 5 líneas. La reflexión de E8 tiene entre 5 y 8 líneas.
-- Los nombres de archivo del README coinciden con el remoto real.
-- Los enlaces internos no están rotos.
+- Los enlaces internos del README no están rotos.
 
-Luego escribe un script de verificación reutilizable que compruebe estos puntos, y déjalo en tools/.
+Luego escribe un script de verificación reutilizable que compruebe estos puntos, y déjalo en
+tools/. El script debe derivar del documento los datos del caso (actores, módulos, totales),
+no tenerlos fijos, para que sirva para el siguiente caso.
 ```

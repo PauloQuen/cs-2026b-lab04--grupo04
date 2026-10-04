@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Vista de despliegue — EcoRecicla AQP (Lab 04, E6)
+Vista de despliegue — ChacraSmart Majes (Lab 04, E6)
 
 Diagram as Code con la libreria `diagrams` (mingrammer) sobre Graphviz.
-Todo el sistema vive en UN SOLO VPS (R-03) y en UN SOLO despliegue (ADR-001);
+El servidor vive en UN SOLO VPS (R-03) y en UN SOLO despliegue (ADR-001);
 por eso el diagrama tiene un unico Cluster de servidor.
+El controlador de campo esta en otro Cluster, porque corre en la parcela (ADR-003).
 
 Como ejecutarlo:
     pip install diagrams          # requiere Graphviz instalado en el sistema
@@ -15,12 +16,13 @@ Salida:
 
 Todas las clases importadas fueron verificadas contra la libreria instalada:
 un import incorrecto hace fallar el script, y ese fallo es exactamente la
-verificacion que pide la guia (E7, interaccion 5).
+verificacion que pide la guia (E7).
 """
 
 from diagrams import Diagram, Cluster, Edge
 from diagrams.generic.device import Mobile
 from diagrams.onprem.client import Users
+from diagrams.onprem.compute import Server
 from diagrams.onprem.database import PostgreSQL
 from diagrams.onprem.inmemory import Redis
 from diagrams.onprem.monitoring import Grafana, Prometheus
@@ -40,7 +42,7 @@ graph_attr = {
 FUENTE = "docs/architecture/drivers.md"
 
 with Diagram(
-    "EcoRecicla AQP — Vista de despliegue (monolito modular, un solo VPS)",
+    "ChacraSmart Majes — Vista de despliegue (monolito modular, un solo VPS)",
     filename="img/despliegue",
     show=False,
     direction="LR",
@@ -49,30 +51,33 @@ with Diagram(
 ):
 
     # ------------------------------------------------------------------ CLIENTES
-    usuarios = Users("Vecinos, recicladores\ny municipalidad")
-    movil = Mobile("PWA instalada\n(celular de gama baja)\nQA-02 · R-05")
+    usuarios = Users("Agricultores\ny tecnicos")
+    movil = Mobile("PWA en celular\nde gama baja\nQA-02")
 
     # --------------------------------------------------- SERVIDOR UNICO (R-03)
     with Cluster("Servidor en la nube — UN SOLO VPS (R-03)"):
 
-        proxy = Nginx("Nginx\nproxy inverso + HTTPS\n(R-04, R-05)")
+        proxy = Nginx("Nginx\nproxy inverso + HTTPS")
 
         with Cluster("Monolito modular — un solo despliegue (ADR-001)"):
-            app = Django("Django API\n6 modulos de dominio\nSolicitudes · Rutas · Puntos\nDistritos · Reportes · Notif.")
+            app = Django("Django API\n5 modulos de dominio\nLecturas · Programacion\nValvulas · Alertas · Dispositivos")
 
-            worker = Celery("Celery\ntareas asincronas\n(avisos WhatsApp RF-07,\nreporte de toneladas RF-05)")
+            worker = Celery("Celery\ntareas asincronas\n(alertas RF-05,\nreportes de humedad)")
 
-        cache = Redis("Redis\ncola + cache de rutas\n(QA-03 · fiabilidad)")
+        cache = Redis("Redis\ncola + estado de\nvalvulas abiertas\n(QA-01 · safety)")
 
-        db = PostgreSQL("PostgreSQL\nun esquema por modulo\n(ADR-002)")
+        db = PostgreSQL("PostgreSQL\nun esquema por modulo")
 
         with Cluster("Monitoreo"):
             metricas = Prometheus("Prometheus\nmetricas de la app")
             paneles = Grafana("Grafana\npaneles y alertas")
 
+    # -------------------------------------------- CAMPO: controlador de campo
+    with Cluster("Parcela en Majes — campo (R-03, R-04)"):
+        controlador = Server("Controlador de campo\nsensor + valvula\ntemporizador local (ADR-003)")
+
     # ------------------------------------------------------ SERVICIOS EXTERNOS
-    whatsapp = Internet("WhatsApp\nBusiness API\n(servicio externo)")
-    ruteo = Internet("Motor de ruteo\nOSRM\n(servicio externo, BSD)")
+    mensajeria = Internet("Servicio de mensajeria\n(WhatsApp / SMS)\nservicio externo")
 
     # ------------------------------------------------------------------- FLUJOS
     usuarios >> movil
@@ -83,8 +88,9 @@ with Diagram(
     app >> Edge(label="encola tarea", color="#6A1B9A") >> cache
     cache >> Edge(label="consume", color="#6A1B9A") >> worker
 
-    worker >> Edge(label="aviso de recojo (RF-07)", style="dashed", color="#7F7F7F") >> whatsapp
-    app >> Edge(label="optimiza ruta (RF-02)", style="dashed", color="#7F7F7F") >> ruteo
+    worker >> Edge(label="alerta de falta de agua (RF-05)", style="dashed", color="#7F7F7F") >> mensajeria
 
     app >> Edge(label="expone /metrics", style="dotted", color="#C0392B") >> metricas
     metricas >> Edge(label="consulta", style="dotted", color="#C0392B") >> paneles
+
+    controlador >> Edge(label="HTTP lecturas\ny ordenes (ADR-002)", color="#C0392B") >> proxy

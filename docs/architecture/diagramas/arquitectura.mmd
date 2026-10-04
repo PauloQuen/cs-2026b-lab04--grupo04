@@ -1,66 +1,60 @@
-%% EcoRecicla AQP — Arquitectura ELEGIDA (alternativa B, 4,05)
-%% Lab 04 · Caso 10 · Grupo 04
-%% Ver ADR-001 (estilo arquitectonico) y drivers.md (RF-, QA-, R-)
+%% ChacraSmart Majes — Arquitectura ELEGIDA (alternativa B, 4,15)
+%% Lab 04 · Caso 9 · Grupo 04
+%% Ver ADR-001 (estilo arquitectonico), ADR-002 (protocolo), ADR-003 (apagado seguro) y drivers.md (RF-, QA-, R-)
 %% Render: https://mermaid.live  ·  Imagen exportada en img/arquitectura.png
 %% --- FIN DE LA CABECERA ---
 %% CONVENCION DE FLECHAS
 %%   -->  dependencia directa (el destino necesita al origen)
 %%   -.-> dependencia entre modulos, solo por interfaz publica (ADR-001)
-%%   ==>  flujo de datos del usuario
+%%   ==>  flujo de datos del usuario o del dispositivo
 
 flowchart TB
 
 %% ------------------------------------------------------------------ ACTORES
-VE["<b>Vecino</b><br/>RF-01 · RF-04 · RF-07"]
-RE["<b>Reciclador</b><br/>RF-02 · RF-03"]
-MU["<b>Municipalidad</b><br/>RF-05 · RF-06"]
+AG["<b>Agricultor</b><br/>RF-02 · RF-03 · RF-04 · RF-05"]
+TE["<b>Tecnico</b><br/>RF-06 · RF-07"]
 
 %% --------------------------------------------------- MONOLITO MODULAR (B)
-subgraph APP["<b>EcoRecicla AQP — MONOLITO MODULAR</b><br/>un solo proceso, un solo despliegue (ADR-001)"]
+subgraph APP["<b>ChacraSmart Majes — MONOLITO MODULAR</b><br/>un solo proceso, un solo despliegue (ADR-001)"]
 
-    API["<b>Capa de presentacion</b><br/>API REST + PWA instalable<br/>QA-02"]
+    API["<b>Capa de presentacion</b><br/>API REST + PWA<br/>QA-02"]
 
     subgraph DOM["<b>Modulos de dominio</b> — se comunican solo por interfaces publicas"]
-        M1["<b>Solicitudes</b><br/>RF-01 · RF-03"]
-        M2["<b>Rutas del dia</b><br/>RF-02"]
-        M3["<b>Puntos y Canjes</b><br/>RF-04"]
-        M4["<b>Distritos y Reglas</b><br/>RF-06<br/><b>punto de modificabilidad</b>"]
-        M5["<b>Reportes</b><br/>RF-05"]
-        M6["<b>Notificaciones</b><br/>RF-07"]
+        M1["<b>Lecturas de humedad</b><br/>RF-01 · RF-02"]
+        M2["<b>Programacion de riego</b><br/>RF-03"]
+        M3["<b>Control de valvulas</b><br/>RF-04<br/><b>aisla el control critico</b>"]
+        M4["<b>Alertas</b><br/>RF-05"]
+        M5["<b>Parcelas y dispositivos</b><br/>RF-06 · RF-07"]
     end
 
     subgraph INF["<b>Infraestructura</b> — puertos y adaptadores"]
         REPO["Repositorios<br/>1 por modulo"]
-        ADPT["Adaptadores externos<br/>WhatsApp · Ruteo"]
+        ADPT["Adaptadores externos<br/>Controlador · Mensajeria"]
     end
 end
 
 %% ------------------------------------------------------------- ALMACENAMIENTO
-DB[("<b>PostgreSQL</b><br/>un esquema por modulo<br/>(ADR-002)")]
+DB[("<b>PostgreSQL</b><br/>lecturas · riegos · valvulas")]
 
 %% ------------------------------------------------------------ SERVICIOS EXTERNOS
-WA["<b>WhatsApp Business API</b><br/>servicio externo<br/><b>costo por mensaje</b>"]
-RT["<b>Motor de ruteo OSRM</b><br/>servicio externo<br/>libre · BSD · C++"]
+CC["<b>Controlador de campo</b><br/>sensor + valvula<br/><b>temporizador local</b><br/>(ADR-003)"]
+MSG["<b>Servicio de mensajeria</b><br/>WhatsApp / SMS<br/>servicio externo"]
 
 %% --------------------------------------------------------------- FLUJO PRINCIPAL
-VE ==> API
-RE ==> API
-MU ==> API
+AG ==> API
+TE ==> API
 
 API --> M1
 API --> M2
 API --> M3
 API --> M4
 API --> M5
-API --> M6
 
-%% ------------------------------------------- DEPENDENCIAS ENTRE MODULOS (QA-01)
-M1 -.-> M3
-M1 -.-> M6
-M2 -.-> M1
-M3 -.-> M4
-M5 -.-> M1
-M6 --> ADPT
+%% ------------------------------------------- DEPENDENCIAS ENTRE MODULOS
+M2 -.-> M3
+M1 -.-> M4
+M3 -.-> M5
+M4 -.-> M5
 
 %% --------------------------------------------- INFRAESTRUCTURA Y PERSISTENCIA
 M1 --> REPO
@@ -70,9 +64,11 @@ M4 --> REPO
 M5 --> REPO
 REPO ==> DB
 
-M2 --> ADPT
-ADPT --> WA
-ADPT --> RT
+M1 --> ADPT
+M3 --> ADPT
+M4 --> ADPT
+ADPT --> CC
+ADPT --> MSG
 
 %% ---------------------------------------------------------------------- ESTILOS
 classDef usuario   fill:#FDEDEC,stroke:#C0392B,stroke-width:2px,color:#000
@@ -83,10 +79,10 @@ classDef infra     fill:#F3E5F5,stroke:#6A1B9A,stroke-width:1px,color:#000
 classDef externo   fill:#F2F2F2,stroke:#7F7F7F,stroke-width:1px,color:#000,stroke-dasharray:5 4
 classDef datos     fill:#ECEFF1,stroke:#37474F,stroke-width:2px,color:#000
 
-class VE,RE,MU usuario
-class M1,M2,M3,M5,M6 modulo
-class M4 critico
+class AG,TE usuario
+class M1,M2,M4,M5 modulo
+class M3 critico
 class API capa
 class REPO,ADPT infra
-class WA,RT externo
+class CC,MSG externo
 class DB datos

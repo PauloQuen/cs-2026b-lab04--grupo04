@@ -1,6 +1,6 @@
-# Matriz de decisión — EcoRecicla AQP
+# Matriz de decisión — ChacraSmart Majes
 
-> Lab 04 · E2 · Caso 10 · Grupo 04
+> Lab 04 · E2 · Caso 9 · Grupo 04
 > Entradas: este archivo toma **únicamente** los drivers declarados en [`drivers.md`](drivers.md). No se introduce
 > ningún criterio que no se pueda rastrear hasta un RF-, QA- o R- de ese documento.
 
@@ -9,17 +9,16 @@
 ## 1. Alternativas consideradas
 
 Las tres alternativas se generaron con un asistente de IA mediante el Prompt 1 (RCRTF), y **se corrigieron
-antes de|scorearlas**: la IA propusomicroservicios con Kubernetes, que se retiró por exceder R-01, R-02 y R-03
+antes de evaluarlas**: la IA propuso microservicios con broker MQTT/operador IoT complejo, que se retiraron por exceder R-01, R-02 y R-03
 (ver §5). El prompt completo está en [`bitacora-ia.md`](bitacora-ia.md), anexo A.
 
 - **A. Monolito en capas:** una sola aplicación y un solo despliegue, dividida en Presentación, Lógica de
-  negocio y Acceso a datos. **Toda** la lógica del dominio (solicitudes, rutas, puntos, reglas, reportes)
+  negocio y Acceso a datos. **Toda** la lógica del dominio (lecturas, riego, válvulas, alertas, parcelas)
   vive en la misma capa y comparte las mismas entidades.
 - **B. Monolito modular:** una sola aplicación y un solo despliegue, dividida en **módulos de dominio**
-  (Solicitudes, Rutas, Puntos y Canjes, Distritos y Reglas, Reportes, Notificaciones) que se comunican
-  **solo mediante interfaces públicas**. Cada módulo tiene su esquema propio y sus adaptadores externos.
-- **C. Microservicios:** un servicio independiente por módulo, cada uno con su **propia base de datos**,
-  comunicados por red (REST/gRPC) y un broker de eventos (RabbitMQ), con API Gateway y monitoreo distribuido.
+  (Lecturas de humedad, Programación de riego, Control de válvulas, Alertas, Parcelas y dispositivos) que se comunican
+  **solo mediante interfaces públicas**. Cada módulo tiene sus adaptadores externos.
+- **C. Arquitectura orientada a eventos:** los dispositivos publican eventos (lecturas, estado) en un broker de mensajes y servicios independientes reaccionan a ellos. Esto añade complejidad operativa frente al monolito.
 
 ---
 
@@ -27,38 +26,41 @@ antes de|scorearlas**: la IA propusomicroservicios con Kubernetes, que se retir�
 
 | Criterio                  | Peso | Justificación (driver relacionado)                                                                                                          |
 |---------------------------|------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| **Modificabilidad**       | 30 % | **QA-01**, el atributo crítico del caso: dar de alta un distrito o una regla nueva en ≤ 2 días-persona **sin tocar los demás módulos**. Pesa más que ningún otro criterio porque es el único atributo con dato medible en el enunciado. |
-| **Tiempo de entrega**     | 25 % | **R-01** (MVP en producción en 1 mes) combinado con **R-02** (2 developers). Con dos personas, cada semana perdida *configurando* infraestructura es una semana que no sale funcionalidad nueva. |
-| **Simplicidad operativa** | 20 % | **R-02**: 2 developers sin experiencia en DevOps. Un estilo que exija operar orquestadores, brokers, pipelines de despliegue y monitoreo distribuido es un estilo que el equipo no puede sostener tras el MVP. |
-| **Costo operativo**       | 15 % | **R-03**: un único VPS. Cada servicio adicional que se paga tiene que justificarse frente a un presupuesto bajo. |
-| **Escalabilidad**         | 10 % | La carga es **moderada y predecible** (distritos de Arequipa, sin picos extremos ni horas pico como las del caso AgroConecta). No hay ningún driver que exija escalado fino, así que este criterio no debe decidir la arquitectura por sí solo. |
+| **Fiabilidad y protección (safety)** | 30 % | **QA-01**, atributo crítico: ninguna válvula debe quedar abierta más del tiempo programado si se pierde la conexión. Mide aislamiento del control de válvulas. |
+| **Tiempo de entrega**     | 25 % | **R-01** (MVP en producción en 1 mes) combinado con **R-02** (2 developers). Cada semana configurando infraestructura es una semana sin funcionalidad. |
+| **Simplicidad operativa** | 20 % | **R-02**: equipo pequeño sin experiencia en operar infraestructura compleja (brokers, orquestadores). |
+| **Costo operativo**       | 15 % | **R-03**: un único VPS. Cada servicio adicional debe justificarse. |
+| **Modificabilidad**       | 10 % | **QA-03**: agregar nuevos tipos de sensor sin tocar otros módulos. |
 | **Total**                 | **100 %** | — |
 
-> **Por qué modificabilidad pesa más que el plazo, y no al revés.** Con 3 personas, un equipo puede tolerar
-> "microservicios" durante un mes. Con 2, no: la curva de aprendizaje de Docker, ORQ y observabilidad se
-> paga justo en el sprint que debería producir el MVP. Aun así, **el atributo crítico del caso manda**, y la
-> forma de honrarlo sin pagar esa curva es B, no C.
+> **Por qué el atributo crítico pesa más que el plazo, y no al revés.** Es tentador priorizar "tiempo de
+> entrega" (25 %) porque R-01 es un plazo duro y R-02 es un equipo de solo 2 personas. Pero el orden de los
+> drivers pone la **fiabilidad y protección primero**: una plataforma que riega de más ante un corte de red
+> causa un daño real al cultivo, mientras que un MVP con dos semanas de atraso es un problema del negocio. Por eso
+> *Fiabilidad y protección* pesa 30 %, y **modificabilidad baja a 10 %** aunque QA-03 sea real: es un atributo
+> deseable, no el que puede dejar una parcela inundada. Aun así, el atributo crítico manda, y la forma de
+> honrarlo **sin** pagar la curva de aprendizaje de un orquestador es B, no C.
 
 ---
 
 ## 3. Matriz de decisión (1 = muy malo … 5 = excelente)
 
-| Criterio (peso)            | A. Monolito en capas | B. Monolito modular | C. Microservicios |
-|----------------------------|-----------------------|---------------------|-------------------|
-| Modificabilidad (30 %)     | 2                     | **4**               | 5                 |
-| Tiempo de entrega (25 %)   | 5                     | **4**               | 2                 |
-| Simplicidad operativa (20 %)| 5                    | **4**               | 1                 |
-| Costo operativo (15 %)     | 5                     | **5**               | 2                 |
-| Escalabilidad (10 %)       | 2                     | **3**               | 5                 |
-| **Total ponderado**        | **3,80**              | **4,05** ← ganador | **3,00**          |
+| Criterio (peso)                        | A. Monolito en capas | B. Monolito modular | C. Arquitectura orientada a eventos |
+|----------------------------------------|-----------------------|---------------------|-------------------------------------|
+| Fiabilidad y protección (30 %)         | 3                     | **4**               | 4                                   |
+| Tiempo de entrega (25 %)               | 5                     | **4**               | 2                                   |
+| Simplicidad operativa (20 %)           | 5                     | **4**               | 2                                   |
+| Costo operativo (15 %)                 | 5                     | **5**               | 3                                   |
+| Modificabilidad (10 %)                 | 2                     | **4**               | 5                                   |
+| **Total ponderado**                    | **4,10**              | **4,15** ← ganador | **3,05**                            |
 
 ### Cálculo (verificable, sin hojas de cálculo ocultas)
 
 Total ponderado = Σ (peso × puntaje).
 
-- **A** = 0,30×2 + 0,25×5 + 0,20×5 + 0,15×5 + 0,10×2 = 0,60 + 1,25 + 1,00 + 0,75 + 0,20 = **3,80**
-- **B** = 0,30×4 + 0,25×4 + 0,20×4 + 0,15×5 + 0,10×3 = 1,20 + 1,00 + 0,80 + 0,75 + 0,30 = **4,05**
-- **C** = 0,30×5 + 0,25×2 + 0,20×1 + 0,15×2 + 0,10×5 = 1,50 + 0,50 + 0,20 + 0,30 + 0,50 = **3,00**
+- **A** = 0,30×3 + 0,25×5 + 0,20×5 + 0,15×5 + 0,10×2 = 0,90 + 1,25 + 1,00 + 0,75 + 0,20 = **4,10**
+- **B** = 0,30×4 + 0,25×4 + 0,20×4 + 0,15×5 + 0,10×4 = 1,20 + 1,00 + 0,80 + 0,75 + 0,40 = **4,15**
+- **C** = 0,30×4 + 0,25×2 + 0,20×2 + 0,15×3 + 0,10×5 = 1,20 + 0,50 + 0,40 + 0,45 + 0,50 = **3,05**
 
 Los totales fueron recalculados con un script de Python para descartar errores aritméticos; el script está en
 [`diagramas/matriz-ponderada.py`](diagramas/matriz-ponderada.py) y regenera además el gráfico de la Figura 4.
@@ -67,30 +69,31 @@ Los totales fueron recalculados con un script de Python para descartar errores a
 
 | Puntaje | Razonamiento                                                                                                                                                             |
 |---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Modificabilidad A = 2 | Al compartir una única capa de lógica y entidades, dar de alta un distrito obliga a revisar el código de Solicitudes, Rutas y Puntos. **No cumple QA-01**: es el motivo por el que se descarta. |
+| Fiabilidad y protección A = 3 / B = 4 / C = 4 | En A el Control de válvulas comparte la lógica de negocio con el resto, así que un cambio en el riego puede tocar el cierre remoto (RF-04) sin revisión explícita. B aísla ese módulo detrás de una interfaz pública, lo que hace la falla segura verificable. **C no sube a 5**: un broker mejora la entrega del mensaje, no la seguridad de la válvula, que depende del temporizador local del controlador (ADR-003). |
+| Modificabilidad A = 2 | Al compartir una única capa de lógica y entidades, dar de alta un tipo nuevo de sensor obliga a revisar Lecturas de humedad, Programación de riego y Alertas. **No cumple QA-03**: es el motivo por el que se descarta. |
 | Modificabilidad B = 4 | Los límites entre módulos se delimitan por convención (interfaces públicas + un esquema por módulo). No es un 5 porque **con 2 developers la disciplina de límites es más difícil de sostener** que con un equipo grande, y nada obliga técnicamente a respetarla. |
 | Modificabilidad C = 5 | Cada módulo se despliega y versiona por separado: el máximo aislamiento. Por eso gana este criterio y aun así pierde la decisión. |
-| Simplicidad C = 1 | Un orquestador, N bases de datos, un broker y monitoreo distribuido para 2 personas que nunca han operado eso. Es el mínimo absoluto de la escala. |
-| Escalabilidad A = 2 / B = 3 / C = 5 | Escala vertical (una sola instancia) frente a escala por módulo. B puntúa 3 y no 4 porque se puede replicar la aplicación completa, pero no un módulo suelto. |
-| Costo A = B = 5 | Los dos caben en un VPS sin costo adicional. C necesita al menos N instancias + N bases de datos + broker + monitoreo dentro del mismo R-03. |
+| Simplicidad operativa C = 2 | Un orquestador, N bases de datos, un broker y monitoreo distribuido para 2 personas que nunca han operado eso (R-02). No es 1 porque el dominio es acotado, pero es inviable en el plazo. |
+| Costo A = B = 5 / C = 3 | Los dos caben en un VPS sin costo adicional (R-03). C necesita al menos N instancias + N bases de datos + broker + monitoreo dentro del mismo presupuesto. |
 
 ---
 
 ## 4. Conclusión
 
-**Elegimos B, el monolito modular (4,05).**
+**Elegimos B, el monolito modular (4,15).**
 
-Es la única alternativa que **honra el atributo crítico** (QA-01: ≤ 2 días-persona y 0 archivos modificados
-fuera de sus módulos para dar de alta un distrito o una regla de puntos) **sin** exigir al equipo capacidad
-operativa que R-01 y R-02 no permiten adquirir en un mes. Los microservicios (3,00) ganan en modificabilidad y
-escalabilidad, pero pierden por plazo, costo y complejidad operativa: pagarían un peaje de infraestructura
-antes de haber escrito la primera funcionalidad.
+Es la alternativa que **honra el atributo crítico** (QA-01: fiabilidad y protección). Aísla el **Control de válvulas** tras una interfaz pública, lo que hace verificable la falla segura, sin exigir la complejidad operativa de un broker de eventos (R-01, R-02, R-03). El monolito modular ofrece modificabilidad suficiente (4/5) con un único despliegue en 1 mes.
 
-**La decisión la tomó el equipo, no la IA.** La IA recomendó microservicios con Kubernetes; el equipo lo
-descartó al contrastarlo con R-01, R-02 y R-03. El detalle está en §5.
+> **La ventaja es de 0,05 puntos.** Conviene decirlo con todas sus letras: B y A quedan casi empatadas, y la
+> diferencia real no está en el número sino en **dónde vive la responsabilidad de cerrar la válvula**. B separa
+> el control de válvulas detrás de una interfaz pública; A lo mezcla con el resto de la lógica. Como
+> **Fiabilidad y protección pesa 30 %**, ese aislamiento es lo que decide. Si el atributo crítico fuera otro,
+> la decisión podría cambiar: por eso el análisis se publica completo, con sus puntajes, en vez de solo el resultado.
 
-**La segunda mejor alternativa es A, el monolito en capas (3,80)**, y es la que se diagrama en E5
-([`diagramas/alternativa.puml`](diagramas/alternativa.puml)) para dejar constancia de por qué se descartó.
+**La decisión la tomó el equipo, no la IA.** La IA recomendó microservicios y orquestación; el equipo lo descartó al contrastarlo con R-01, R-02, R-03 y R-04 (conectividad intermitente). El detalle está en §5.
+
+**La segunda mejor alternativa es A, el monolito en capas (4,10)**, que se diagrama en E5
+([`diagramas/alternativa.puml`](diagramas/alternativa.puml)) para dejar constancia de por qué se descartó (mezcla el control de válvulas con el resto de la lógica, penalizando fiabilidad 3/5 y modificabilidad 2/5).
 
 Decisión formalizada en: **[ADR-001 — Estilo arquitectónico](adr/001-estilo-arquitectonico.md)**.
 
@@ -101,20 +104,13 @@ Decisión formalizada en: **[ADR-001 — Estilo arquitectónico](adr/001-estilo-
 La guía exige registrar al menos una afirmación incorrecta, exagerada o que no respete las restricciones, y
 **cómo se comprobó**. Registramos tres, todas con fuente oficial consultada el **03/10/2026**.
 
-### 5.1 «Escalabilidad es el criterio que más peso debería tener» → **FALSO para este caso** · decisión: **Corregida**
+### 5.1 «El servidor detecta la desconexión y cierra la válvula» → **FALSO** · decisión: **Corregida**
 
-**Qué propuso la IA:** en el borrador de la matriz ponderada, *Escalabilidad* figuraba entre los criterios de peso
-alto, con la justificación genérica de que *"todo sistema debe poder escalar"*.
+**Qué propuso la IA:** propuso que, ante la pérdida de conexión con la válvula abierta, *"el servidor detecta la desconexión y envía la orden de cierre"*.
 
-**Cómo lo verificamos:** se cotejó la matriz contra el enunciado del caso 10 y se encontró que **no existe ningún
-driver de escalabilidad**. El caso no declara concurrencia, ni horas pico, ni volumen de sensores comparable al caso
-AgroConecta (300 concurrentes) o RutaSIT (300 buses × 10 s). El único atributo con medida numérica es la
-**modificabilidad**. Un criterio sin una línea del enunciado detrás es un criterio inventado, y la propia guía lo
-advierte en §1.7 al hablar del sesgo de los asistentes hacia la arquitectura de moda.
+**Cómo lo verificamos:** razonando sobre QA-01 y R-04 (conectividad intermitente). **Sin conexión, no llega ningún comando desde el servidor.** El cierre no puede depender de la red. Por ello la protección debe residir en el **controlador de campo** con un temporizador local (ver ADR-003). Esto es una afirmación lógicamente imposible y representa un error crítico para un atributo de *safety*.
 
-**Corrección aplicada:** *Escalabilidad* bajó al **peso más bajo (10 %)** y su justificación ahora dice
-explícitamente que no hay ningún driver que lo exija, en lugar de una fórmula genérica. Los otros cuatro criterios
-sí se pudieron trazar hasta `drivers.md` (QA-01 modificabilidad, R-01 plazo, R-02 equipo, R-03 costo).
+**Corrección aplicada:** el criterio crítico pasó a ser **Fiabilidad y protección (safety)** (30 %), y la matriz/ADR dejan explícito que la falla segura se garantiza en el controlador de campo, no en el servidor.
 
 ### 5.2 «El diagrama Mermaid generado es correcto, solo hay que revisarlo» → **FALSO** · decisión: **Corregida**
 
@@ -136,50 +132,21 @@ del propio diagrama.
 **Corrección aplicada:** cada `%%` vacío pasó a ser `%% --- ... ---` y el render generó el PNG sin errores. La
 lección quedó registrada en `bitacora-ia.md`: *leer no es verificar, hay que ejecutar la herramienta*.
 
-### 5.3 «La API de WhatsApp se activa al instante con una API key y las plantillas no tienen costo» → **PARCIALMENTE FALSO** · decisión: **Corregida**
+### 5.3 «Se puede confiar en que el servidor detecta desconexión para cerrar válvula» → **FALSO** · decisión: **Corregida**
 
-**Qué propuso la IA:** integrar WhatsApp Business API *"con solo una cuenta y una API key"*, y tratar el módulo
-Notificaciones como **costo operativo cero**, con las plantillas de aviso sin cargo.
+**Qué propuso la IA:** asumió que la protección opera en el servidor (detección de desconexión). Eso es imposible sin conexión (R-04).
 
-**Cómo lo verificamos:** documentación oficial de Meta, *Pricing on the WhatsApp Business Platform*
-(<https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing>, consultada el 03/10/2026):
+**Cómo lo verificamos:** análisis lógico del caso (fall-safe). La solución correcta es **temporizador local en el controlador** (ADR-003). Cada orden de apertura lleva duración máxima y el controlador cierra por sí solo.
 
-- La API **no se activa al instante**: las plantillas requieren un proceso de aprobación previo, y la cuenta es
-  de empresa, con un proveedor de soluciones verificado. El borrador omitía ambos requisitos.
-- Desde el **1 de julio de 2025** Meta cobra **por mensaje entregado** y el modelo por conversación quedó
-  **deprecado**. Se cobra cuando el mensaje se **entrega**, no cuando se envía.
-- Los **mensajes de plantilla (`template`) sí se cobran**, según la categoría de la plantilla y el prefijo
-  telefónico del destinatario. El aviso *«tu recojo está programado para mañana»* es una plantilla **utility**:
-  su tarifa es menor que la de *marketing*, pero **no es gratis**. Enviar una plantilla fuera de la ventana de
-  atención **también se factura**; lo que evita el cobro es mandarla **dentro** de la ventana de 24 h que abre el
-  usuario.
-- Desde el **1 de octubre de 2026** también se cobran los **mensajes de servicio** (los que no son plantilla), con
-  una exención de **1 000 mensajes de servicio gratis al mes por número de teléfono**, que no se acumula.
+**Corrección aplicada:** ADR-003 documenta explícitamente esta decisión con alternativas (servidor vs temporizador local). El atributo crítico se justifica correctamente.
 
-**Corrección aplicada:** el presupuesto de R-03 incluye una partida por volumen de mensajes, y el aviso se
-diseña como plantilla *utility* **dentro** de la ventana de atención, que es el caso más barato. Esto **no cambia
-la arquitectura** —el módulo Notificaciones sigue siendo un adaptador aislado detrás de una interfaz— pero sí
-obliga a medir el volumen mensual, porque el costo escala con el número de recojos notificados.
+### 5.4 «Microservicios/Kubernetes son necesarios» → **FALSO** · decisión: **Corregida**
 
-### 5.4 «Los servicios de mapas son gratis y sin cuota» → **PARCIALMENTE FALSO** · decisión: **Corregida**
+**Qué propuso la IA:** sugería microservicios con broker para "escalabilidad", exagerando complejidad.
 
-**Qué propuso la IA:** usar un servicio de mapas con *«cuota gratuita ilimitada»* para el módulo Rutas.
+**Cómo lo verificamos:** contrastado con R-01 (1 mes), R-02 (2 developers), R-03 (1 VPS). El equipo no tiene capacidad operativa. El monolito modular (B) alcanza QA-01 manteniendo despliegue único.
 
-**Cómo lo verificamos:**
-
-- Google Maps Platform **no tiene cuota ilimitada**: la Directions API cuesta **USD 5 por 1 000 solicitudes** y la
-  Distance Matrix API **USD 10 por 1 000 elementos**, después de un crédito mensual de USD 200. La cuota gratuita
-  se aplica **por servicio**, no agrupada.
-- Los **datos** de OpenStreetMap son libres bajo licencia ODbL, pero **eso no implica servicios gratuitos**: el
-  servidor público de Nominatim tiene una **política de uso** que prohíbe el tráfico de producción. La distinción
-  importa: *datos libres* ≠ *infraestructura gratis*.
-- **OSRM** (Open Source Routing Machine) es un motor de ruteo **libre, sin costo por petición y auto-hospedable**
-  (licencia BSD, implementado en **C++**). Ofrece los servicios `route` y `table` (matriz de distancias), que es
-  exactamente lo que necesita el módulo Rutas, y ya es parte del stack declarado del equipo.
-
-**Corrección aplicada:** el módulo Rutas se implementará con un **puerto de ruteo** que hoy apunta a un adaptador
-OSRM (gratis, R-03 respetado) y que mañana puede apuntar a un proveedor pago sin tocar la lógica de negocio. Esta
-corrección es exactamente lo que hace útil el patrón de adaptador dentro del monolito modular.
+**Corrección aplicada:** descartamos C (eventos) y priorizamos simplicidad operativa sobre complejidad innecesaria.
 
 ---
 
@@ -206,6 +173,5 @@ se recomendaron Kubernetes, pero se habló de escalabilidad como si el caso la e
 ## Referencias
 
 - Richards, M. y Ford, N. (2020). *Fundamentals of Software Architecture*. O'Reilly. — estilos arquitectónicos y sus trade-offs.
-- Meta for Developers (03/10/2026). *Pricing on the WhatsApp Business Platform*. <https://developers.facebook.com/documentation/business-messaging/whatsapp/pricing>
-- Project OSRM. <https://project-osrm.org/> — motor de ruteo libre (BSD, C++), servicios `route` y `table`.
 - Guía del Lab 04, secciones 1.4 (estilos), 1.7 (IA como apoyo) y II Paso 3 (verificación humana).
+- Bass, L., Clements, P. y Kazman, R. (2021). *Software Architecture in Practice* (4.ª ed.). Addison-Wesley. — safety/falla segura.

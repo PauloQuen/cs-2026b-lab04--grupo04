@@ -1,8 +1,8 @@
-# EcoRecicla AQP — Laboratorio 04: Fundamentos de arquitectura de software
+# ChacraSmart Majes — Laboratorio 04: Fundamentos de arquitectura de software
 
 **Construcción de Software** · EPIS-UNSA · 2026-B · **Grupo 04**
 
-> Caso 10 de la guía del Lab 04. Este repositorio documenta la arquitectura de *EcoRecicla AQP* aplicando
+> Caso 9 de la guía del Lab 04. Este repositorio documenta la arquitectura de *ChacraSmart Majes* aplicando
 > **Diagram as Code** (Mermaid, PlantUML y Python Diagrams) y el uso **crítico** de asistentes de IA.
 
 ---
@@ -24,86 +24,89 @@ Java, Node y Angular.
 
 ## Caso
 
-EcoRecicla AQP es una plataforma para coordinar el **recojo de residuos reciclables con recicladores
-formalizados en distritos de Arequipa**. Los vecinos **solicitan el recojo** (RF-01) y **canjean puntos** por
-sus aportes (RF-04); los recicladores **consultan su ruta del día** (RF-02) y **confirman el recojo registrando
-el peso** (RF-03); la municipalidad **consulta las toneladas recicladas** (RF-05) y **administra distritos y
-reglas de puntos** (RF-06). Los avisos al vecino llegan por **WhatsApp** (RF-07).
+**ChacraSmart Majes** es una plataforma de **riego inteligente** para parcelas de Majes (Arequipa). Los
+**sensores** miden la humedad del suelo y la reportan al sistema (RF-01); el **agricultor** consulta la humedad
+actual e histórica de su parcela (RF-02), **programa un riego** indicando parcela, hora y duración (RF-03),
+**abre o cierra una válvula de forma remota** (RF-04) y recibe una **alerta por falta de agua** (RF-05); el
+**técnico** registra parcelas, sensores y válvulas (RF-06) y consulta si cada dispositivo está en línea o
+fuera de línea (RF-07).
 
-El **atributo de calidad crítico es la modificabilidad**: incorporar un nuevo distrito o una nueva regla de
-puntos debe tomar **≤ 2 días-persona y sin modificar los demás módulos**.
+El **atributo de calidad crítico es la fiabilidad y protección (safety)**: si se pierde la conexión, **ninguna
+válvula debe quedar abierta más del tiempo programado**. De ahí sale la decisión que estructura el resto del
+trabajo: la falla segura **no puede depender del servidor**, porque sin conexión no llega ninguna orden. Tiene
+que vivir en un **temporizador local del controlador de campo** ([ADR-003](docs/architecture/adr/003-apagado-seguro-en-controlador.md)).
 
 ---
 
 ## Arquitectura elegida
 
-Se eligió un **monolito modular** en Django (alternativa B, puntaje **4,05**), por encima del monolito en
-capas (**3,80**) y de los microservicios (**3,00**).
+Se eligió un **monolito modular** en Django (alternativa B, puntaje **4,15**), por encima del monolito en capas
+(**4,10**) y de la arquitectura orientada a eventos (**3,05**).
+
+> La ventaja es de apenas **0,05 puntos** sobre A, y conviene decirlo con todas sus letras. La diferencia real
+> no está en el número: está en **dónde vive la responsabilidad de cerrar la válvula**. B separa el control de
+> válvulas detrás de una interfaz pública; A lo mezcla con el resto de la lógica. Como *Fiabilidad y protección*
+> pesa **30 %**, ese aislamiento decide. El análisis completo, con puntajes, está en
+> [`matriz-decision.md`](docs/architecture/matriz-decision.md).
 
 ```mermaid
-%% EcoRecicla AQP — Arquitectura ELEGIDA (alternativa B, 4,05)
-%% Lab 04 · Caso 10 · Grupo 04
-%% Ver ADR-001 (estilo arquitectonico) y drivers.md (RF-, QA-, R-)
+%% ChacraSmart Majes — Arquitectura ELEGIDA (alternativa B, 4,15)
+%% Lab 04 · Caso 9 · Grupo 04
+%% Ver ADR-001 (estilo arquitectonico), ADR-002 (protocolo), ADR-003 (apagado seguro) y drivers.md (RF-, QA-, R-)
 %% Render: https://mermaid.live  ·  Imagen exportada en img/arquitectura.png
 %% --- FIN DE LA CABECERA ---
 %% CONVENCION DE FLECHAS
 %%   -->  dependencia directa (el destino necesita al origen)
 %%   -.-> dependencia entre modulos, solo por interfaz publica (ADR-001)
-%%   ==>  flujo de datos del usuario
+%%   ==>  flujo de datos del usuario o del dispositivo
 
 flowchart TB
 
 %% ------------------------------------------------------------------ ACTORES
-VE["<b>Vecino</b><br/>RF-01 · RF-04 · RF-07"]
-RE["<b>Reciclador</b><br/>RF-02 · RF-03"]
-MU["<b>Municipalidad</b><br/>RF-05 · RF-06"]
+AG["<b>Agricultor</b><br/>RF-02 · RF-03 · RF-04 · RF-05"]
+TE["<b>Tecnico</b><br/>RF-06 · RF-07"]
 
 %% --------------------------------------------------- MONOLITO MODULAR (B)
-subgraph APP["<b>EcoRecicla AQP — MONOLITO MODULAR</b><br/>un solo proceso, un solo despliegue (ADR-001)"]
+subgraph APP["<b>ChacraSmart Majes — MONOLITO MODULAR</b><br/>un solo proceso, un solo despliegue (ADR-001)"]
 
-    API["<b>Capa de presentacion</b><br/>API REST + PWA instalable<br/>QA-02"]
+    API["<b>Capa de presentacion</b><br/>API REST + PWA<br/>QA-02"]
 
     subgraph DOM["<b>Modulos de dominio</b> — se comunican solo por interfaces publicas"]
-        M1["<b>Solicitudes</b><br/>RF-01 · RF-03"]
-        M2["<b>Rutas del dia</b><br/>RF-02"]
-        M3["<b>Puntos y Canjes</b><br/>RF-04"]
-        M4["<b>Distritos y Reglas</b><br/>RF-06<br/><b>punto de modificabilidad</b>"]
-        M5["<b>Reportes</b><br/>RF-05"]
-        M6["<b>Notificaciones</b><br/>RF-07"]
+        M1["<b>Lecturas de humedad</b><br/>RF-01 · RF-02"]
+        M2["<b>Programacion de riego</b><br/>RF-03"]
+        M3["<b>Control de valvulas</b><br/>RF-04<br/><b>aisla el control critico</b>"]
+        M4["<b>Alertas</b><br/>RF-05"]
+        M5["<b>Parcelas y dispositivos</b><br/>RF-06 · RF-07"]
     end
 
     subgraph INF["<b>Infraestructura</b> — puertos y adaptadores"]
         REPO["Repositorios<br/>1 por modulo"]
-        ADPT["Adaptadores externos<br/>WhatsApp · Ruteo"]
+        ADPT["Adaptadores externos<br/>Controlador · Mensajeria"]
     end
 end
 
 %% ------------------------------------------------------------- ALMACENAMIENTO
-DB[("<b>PostgreSQL</b><br/>un esquema por modulo<br/>(ADR-002)")]
+DB[("<b>PostgreSQL</b><br/>lecturas · riegos · valvulas")]
 
 %% ------------------------------------------------------------ SERVICIOS EXTERNOS
-WA["<b>WhatsApp Business API</b><br/>servicio externo<br/><b>costo por mensaje</b>"]
-RT["<b>Motor de ruteo OSRM</b><br/>servicio externo<br/>libre · BSD · C++"]
+CC["<b>Controlador de campo</b><br/>sensor + valvula<br/><b>temporizador local</b><br/>(ADR-003)"]
+MSG["<b>Servicio de mensajeria</b><br/>WhatsApp / SMS<br/>servicio externo"]
 
 %% --------------------------------------------------------------- FLUJO PRINCIPAL
-VE ==> API
-RE ==> API
-MU ==> API
+AG ==> API
+TE ==> API
 
 API --> M1
 API --> M2
 API --> M3
 API --> M4
 API --> M5
-API --> M6
 
-%% ------------------------------------------- DEPENDENCIAS ENTRE MODULOS (QA-01)
-M1 -.-> M3
-M1 -.-> M6
-M2 -.-> M1
-M3 -.-> M4
-M5 -.-> M1
-M6 --> ADPT
+%% ------------------------------------------- DEPENDENCIAS ENTRE MODULOS
+M2 -.-> M3
+M1 -.-> M4
+M3 -.-> M5
+M4 -.-> M5
 
 %% --------------------------------------------- INFRAESTRUCTURA Y PERSISTENCIA
 M1 --> REPO
@@ -113,9 +116,11 @@ M4 --> REPO
 M5 --> REPO
 REPO ==> DB
 
-M2 --> ADPT
-ADPT --> WA
-ADPT --> RT
+M1 --> ADPT
+M3 --> ADPT
+M4 --> ADPT
+ADPT --> CC
+ADPT --> MSG
 
 %% ---------------------------------------------------------------------- ESTILOS
 classDef usuario   fill:#FDEDEC,stroke:#C0392B,stroke-width:2px,color:#000
@@ -126,12 +131,12 @@ classDef infra     fill:#F3E5F5,stroke:#6A1B9A,stroke-width:1px,color:#000
 classDef externo   fill:#F2F2F2,stroke:#7F7F7F,stroke-width:1px,color:#000,stroke-dasharray:5 4
 classDef datos     fill:#ECEFF1,stroke:#37474F,stroke-width:2px,color:#000
 
-class VE,RE,MU usuario
-class M1,M2,M3,M5,M6 modulo
-class M4 critico
+class AG,TE usuario
+class M1,M2,M4,M5 modulo
+class M3 critico
 class API capa
 class REPO,ADPT infra
-class WA,RT externo
+class CC,MSG externo
 class DB datos
 ```
 
@@ -167,20 +172,19 @@ class DB datos
 ## Decisiones arquitectónicas
 
 - [**ADR-001 — Estilo arquitectónico: monolito modular**](docs/architecture/adr/001-estilo-arquitectonico.md)
-- [**ADR-002 — Base de datos: PostgreSQL con un esquema por módulo**](docs/architecture/adr/002-base-de-datos.md)
-- [**ADR-003 — PWA en lugar de aplicación nativa**](docs/architecture/adr/003-pwa-vs-app-nativa.md)
+- [**ADR-002 — Protocolo de comunicación: HTTP con polling y buffer local**](docs/architecture/adr/002-protocolo-de-comunicacion.md)
+- [**ADR-003 — Apagado seguro en el controlador de campo**](docs/architecture/adr/003-apagado-seguro-en-controlador.md)
 
 ---
 
 ## Reflexión sobre el uso de la IA (5–8 líneas)
 
-La IA acertó en lo conceptual: los tres estilos son los de la guía, y el riesgo que señaló —que un
-monolito modular degenera en capas sin disciplina de límites— terminó siendo la consecuencia negativa del ADR-001.
-Sus fallos fueron de omisión, y ninguno se veía leyendo: en la matriz ponderaba "Escalabilidad" sin un driver
-detrás: el caso no declara ni un pico de carga. El diagrama Mermaid
-parecía correcto y no compilaba, por un comentario vacío; el script de despliegue importaba clases que la librería
-no tiene. Los tres fallos aparecieron al ejecutar, no al leer. La lección: **la IA propone y el equipo verifica**,
-y verificar significa ejecutar la herramienta.
+El fallo más grave no fue de código: la IA propuso que el servidor cerrara la válvula al detectar la
+desconexión, imposible porque sin conexión no llega ninguna orden. Ese error reordenó el atributo crítico y
+forzó la decisión que sostiene todo el caso. Los fallos visibles aparecieron al ejecutar: un `NameError` por un
+import faltante y tres totales mal calculados que una aserción detectó. El equipo además presentó una
+recomendación de hardware como restricción. **La IA propone y el equipo verifica**: un enunciado se verifica
+razonándolo, el código ejecutándolo.
 
 ---
 
@@ -221,8 +225,23 @@ java -jar /ruta/a/plantuml.jar -tpng -o img alternativa.puml
 
 ---
 
+## Verificación automática
+
+El repositorio incluye un verificador que contrasta los entregables contra la rúbrica del Lab 04:
+
+```bash
+python3 tools/verificar-rubrica.py
+```
+
+No tiene hardcodeados los puntajes, los actores, los módulos ni los nombres de los ADR: **deriva esos datos de
+los propios documentos**. Por eso el mismo script sigue sirviendo cuando el equipo cambia de caso, sin
+reescribirlo. Sale con código 1 si algún requisito mínimo no está cubierto, lo que lo hace utilizable en
+integración continua.
+
+---
+
 ## Entrega
 
 - Repositorio: **`cs-2026b-lab04--grupo04`** (público, con el docente como colaborador)
-- Fecha límite de entrega: **sábado 03/10/2026, 23:59**, vía Aula Virtual
+- Fecha de trabajo: **04/10/2026**
 - Revisión cruzada: cada integrante abre al menos un Pull Request y otro lo revisa y aprueba

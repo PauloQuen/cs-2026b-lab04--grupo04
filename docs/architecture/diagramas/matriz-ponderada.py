@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Matriz de decisión ponderada — EcoRecicla AQP (Lab 04, E2 / Figura 4)
+Matriz de decisión ponderada — ChacraSmart Majes (Lab 04, E2 / Figura 4)
 
 Recalcula los totales ponderados de docs/architecture/matriz-decision.md y genera
 el grafico de barras comparativo.
@@ -27,21 +27,21 @@ import matplotlib.pyplot as plt
 # --------------------------------------------------------------------------- #
 CRITERIOS = [
     # (nombre, peso, {alternativa: puntaje}, driver que lo justifica)
-    ("Modificabilidad",       0.30, {"A": 2, "B": 4, "C": 5}, "QA-01 (atributo critico)"),
-    ("Tiempo de entrega",     0.25, {"A": 5, "B": 4, "C": 2}, "R-01 + R-02"),
-    ("Simplicidad operativa", 0.20, {"A": 5, "B": 4, "C": 1}, "R-02"),
-    ("Costo operativo",       0.15, {"A": 5, "B": 5, "C": 2}, "R-03"),
-    ("Escalabilidad",         0.10, {"A": 2, "B": 3, "C": 5}, "carga moderada (sin driver)"),
+    ("Fiabilidad y proteccion", 0.30, {"A": 3, "B": 4, "C": 4}, "QA-01 (atributo critico)"),
+    ("Tiempo de entrega",       0.25, {"A": 5, "B": 4, "C": 2}, "R-01 + R-02"),
+    ("Simplicidad operativa",   0.20, {"A": 5, "B": 4, "C": 2}, "R-02"),
+    ("Costo operativo",         0.15, {"A": 5, "B": 5, "C": 3}, "R-03"),
+    ("Modificabilidad",         0.10, {"A": 2, "B": 4, "C": 5}, "QA-03"),
 ]
 
 ALTERNATIVAS = {
     "A": "A. Monolito en capas",
     "B": "B. Monolito modular",
-    "C": "C. Microservicios",
+    "C": "C. Arquitectura orientada a eventos",
 }
 
 # Totales publicados en matriz-decision.md. Si el calculo no coincide, el documento miente.
-TOTALES_PUBLICADOS = {"A": 3.80, "B": 4.05, "C": 3.00}
+TOTALES_PUBLICADOS = {"A": 4.10, "B": 4.15, "C": 3.05}
 
 COLOR = {"A": "#90A4AE", "B": "#2E7D32", "C": "#C0392B"}
 
@@ -92,12 +92,12 @@ def grafica(total: dict[str, float]) -> Path:
     ax.set_xlim(0, 5)
     ax.set_xticks(range(6))
     ax.set_xlabel("Total ponderado  (1 = muy malo  ·  5 = excelente)", fontsize=11)
-    ax.set_title("EcoRecicla AQP — Matriz de decisión ponderada\n"
-                 "Gana el monolito modular (B, 4,05)", fontsize=13.5, fontweight="bold")
+    ax.set_title("ChacraSmart Majes — Matriz de decisión ponderada\n"
+                 "Gana el monolito modular (B, 4,15)", fontsize=13.5, fontweight="bold")
 
     ax.text(0.995, -0.16,
-            "Pesos: Modificabilidad 30 % · Tiempo de entrega 25 % · Simplicidad operativa 20 % · "
-            "Costo operativo 15 % · Escalabilidad 10 %",
+            "Pesos: Fiabilidad y protección 30 % · Tiempo de entrega 25 % · Simplicidad operativa 20 % · "
+            "Costo operativo 15 % · Modificabilidad 10 %",
             transform=ax.transAxes, ha="right", va="top", fontsize=8.6, color="#546E7A")
 
     ax.grid(axis="x", linestyle="--", alpha=0.35)
