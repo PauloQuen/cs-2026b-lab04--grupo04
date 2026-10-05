@@ -1,7 +1,7 @@
 # Cuestionario — Laboratorio 04: Fundamentos de Arquitectura de Software
 
 > **Curso:** Construcción de Software · EPIS-UNSA · Semestre 2026-B  
-> **Caso 10:** EcoRecicla AQP  
+> **Caso 09:** ChacraSmart Majes  
 > **Grupo 04:** Quenta Ahumada Paulo Estefano y Kevin Joel Callo Ccagiavilca  
 
 ---
@@ -9,41 +9,42 @@
 ### 1. ¿Por qué se afirma que una decisión arquitectónica es aquella "costosa de cambiar"? Dé un ejemplo de su caso.
 
 **Respuesta:**  
-Una decisión arquitectónica es aquella que tiene un impacto estructural transversal en el sistema y condiciona los componentes, interfaces, tecnologías y flujos de trabajo posteriores. Conforme avanza el ciclo de vida del software, el costo de revertir una decisión de este nivel crece exponencialmente (no solo en refactorización de código fuente, sino en migración de datos capturados, reconfiguración de infraestructura de producción, pruebas de regresión y curva de reaprendizaje del equipo).
+Una decisión arquitectónica es aquella que define las estructuras fundamentales del sistema, sus componentes clave y los principios que guían su diseño e interconexión (Bass et al., 2021; ISO/IEC/IEEE 42010). Se dice que es "costosa de cambiar" porque una vez implementada y puesta en producción, revertirla tiene un costo exponencial que trasciende la simple modificación de líneas de código: involucra rediseño de protocolos, migración de infraestructura, cambios físicos en dispositivos periféricos y tiempo no planificado.
 
-**Ejemplo en EcoRecicla AQP:**  
-La decisión documentada en el [ADR-002](architecture/adr/002-base-de-datos.md) de usar **PostgreSQL con particionamiento de esquemas relacionales por módulo** frente a una base de datos documental (MongoDB). Cambiar a posteriori el motor relacional por uno documental una vez que el sistema esté operando significaría:
-1. Reescribir el mapeo de modelos en el ORM de Django en los 6 módulos de dominio.
-2. Descartar las transacciones ACID nativas del motor que aseguran que al registrar un recojo (RF-03) se acrediten los puntos (RF-04) exactamente una vez, obligando a implementar patrones complejos de consistencia eventual o transacciones distribuidas en la aplicación.
-3. Migrar esquemas estructurados de recojos y tonelajes a colecciones de documentos JSON sin soporte nativo de agregaciones SQL optimizadas (`GROUP BY`, `SUM`).
+**Ejemplo en ChacraSmart Majes:**  
+La decisión documentada en el [ADR-003](architecture/adr/003-apagado-seguro-en-controlador.md) sobre **dónde reside la lógica de falla segura (safety)**: en un temporizador autónomo en el controlador de campo frente a delegarla en el servidor en la nube.  
+Si inicialmente se hubiera construido asumiendo que el servidor envía la orden de cierre al expirar el tiempo de riego, y en producción se descubriera que los cortes frecuentes de red 3G en las parcelas dejan válvulas abiertas inundando cultivos, el cambio exigiría:
+1. Reprogramar y volver a flashear el firmware de todos los controladores físicos distribuidos en las parcelas de Majes.
+2. Rediseñar el contrato de la API y el payload de apertura para incluir la duración máxima obligatoria.
+3. Reconfigurar los circuitos de watchdog y persistencia local de hardware para tolerar reinicios imprevistos.
 
 ---
 
 ### 2. ¿Cuál es la diferencia entre un requisito funcional y un atributo de calidad? ¿Por qué los atributos de calidad influyen más en la arquitectura?
 
 **Respuesta:**  
-- **Requisito Funcional (RF):** Define **qué** debe hacer el sistema: las capacidades, comportamientos, entradas y salidas específicas que satisfacen las necesidades de negocio del usuario (ejemplo en nuestro caso: RF-01, *"El vecino solicita el recojo indicando dirección y tipo de residuo"*).
-- **Atributo de Calidad (QA):** Define **cómo de bien** debe comportarse el sistema con respecto a propiedades observables en ejecución o desarrollo (rendimiento, fiabilidad, modificabilidad, seguridad, etc., según ISO/IEC 25010:2023).
+- **Requisito Funcional (RF):** Expresa **qué** servicios o funciones debe proporcionar el sistema al usuario o actor (ejemplo en nuestro caso: RF-03, *"El agricultor programa un riego indicando parcela, hora y duración"* y RF-04, *"El agricultor abre o cierra una válvula de forma remota"*).
+- **Atributo de Calidad (QA):** Describe **cómo de bien** el sistema debe satisfacer esas funciones respecto a propiedades medibles como rendimiento, fiabilidad, mantenibilidad o seguridad (ISO/IEC 25010:2023).
 
 **Por qué los atributos de calidad influyen más en la arquitectura:**  
-Casi cualquier funcionalidad de negocio puede implementarse en cualquier estilo arquitectónico (sea un script monolítico de un solo archivo, una aplicación en capas o una red de microservicios). Sin embargo, son los **atributos de calidad y las restricciones** los que determinan qué estructuras organizativas son viables y cuáles no:
-- El requisito funcional RF-06 (administrar distritos) funciona igual en un monolito en capas que en uno modular; pero el atributo de calidad crítico **QA-01 (Modificabilidad: dar de alta un distrito en $\le 2$ días-persona y con 0 archivos tocados fuera de su módulo)** descarta de raíz el monolito en capas y obliga a adoptar límites estrictos de dominio (monolito modular o microservicios).
+Cualquier funcionalidad básica (abrir una válvula o recibir datos de un sensor) puede codificarse en prácticamente cualquier lenguaje o estilo arquitectónico. Sin embargo, son los **atributos de calidad y las restricciones** los que imponen la estructura:
+- En *ChacraSmart Majes*, el atributo crítico **QA-01 (Fiabilidad y protección / safety: si se pierde la conexión, ninguna válvula queda abierta más del tiempo programado)** es el que obliga a desacoplar el módulo de *Control de válvulas* y a trasladar la garantía de cierre al hardware local ([ADR-003](architecture/adr/003-apagado-seguro-en-controlador.md)). Un monolito en capas tradicional (Alternativa A) puede cumplir la función de riego, pero mezcla el control de válvulas con el resto de la lógica compartida, poniendo en riesgo la criticidad de la protección.
 
 ---
 
 ### 3. Reescriba el requisito "el sistema debe ser seguro" como un escenario de atributo de calidad de seis partes.
 
 **Respuesta:**  
-Siguiendo la plantilla formal de seis partes de Bass, Clements y Kazman (2021), el requerimiento vago de seguridad se formula para nuestro caso (conforme a QA-04 en [`drivers.md`](architecture/drivers.md)):
+Aplicando la plantilla formal de seis partes de Bass, Clements y Kazman (2021), el enunciado vago "el sistema debe ser seguro" se especifica para *ChacraSmart Majes* protegiendo los datos de agricultores y el acceso a los actuadores físicos:
 
-| Parte | Definición | Valor en el Escenario (QA-04) |
+| Parte | Definición | Valor en el Escenario |
 |---|---|---|
-| **Fuente del estímulo** | ¿Quién o qué genera el evento? | Un usuario anónimo o un vecino no autenticado en la red pública. |
-| **Estímulo** | ¿Qué evento o acción ocurre? | Intenta acceder directamente a los endpoints de la API (`/api/solicitudes/` y `/api/puntos/`) enviando peticiones con el identificador de otro vecino para extraer direcciones domiciliarias y saldos. |
-| **Artefacto** | ¿Qué elemento del sistema recibe el estímulo? | La capa de presentación / Gateway de la API REST del módulo Solicitudes y Puntos. |
-| **Entorno** | ¿En qué condiciones operativas ocurre? | Operación normal en producción, comunicación bajo HTTPS. |
-| **Respuesta** | ¿Qué hace el sistema ante el estímulo? | El middleware de autenticación y autorización intercepta las peticiones, rechaza el acceso con códigos de estado HTTP 401/403, no expone datos protegidos por la Ley 29733 y registra un evento de auditoría con IP, timestamp e ID solicitado. |
-| **Medida de respuesta** | ¿Cómo se mide objetivamente el resultado? | **100 % de 200 intentos simulados de acceso no autorizado son bloqueados** y el 100 % de los intentos fallidos queda registrado en la bitácora de seguridad sin fuga de datos personales. |
+| **Fuente del estímulo** | ¿Quién o qué genera el evento? | Un usuario externo o no autenticado a través de internet. |
+| **Estímulo** | ¿Qué evento o acción ocurre? | Intenta enviar una petición maliciosa al endpoint de accionamiento remoto (`POST /api/valvulas/abrir`) o extraer información de parcelas y teléfonos protegidos por la Ley 29733 (R-07). |
+| **Artefacto** | ¿Qué parte del sistema lo recibe? | El proxy inverso Nginx y el middleware de autenticación/autorización de la API Django. |
+| **Entorno** | ¿En qué condiciones operativas ocurre? | Operación normal en producción, tráfico cifrado bajo HTTPS/TLS. |
+| **Respuesta** | ¿Qué debe hacer el sistema? | El sistema rechaza inmediatamente la petición con código HTTP 401/403, no ejecuta ningún comando en los controladores físicos de campo y registra el intento con IP, timestamp y cabeceras en el registro de auditoría. |
+| **Medida de respuesta** | ¿Cómo se verifica objetivamente? | **100 % de 200 intentos de acceso o accionamiento no autorizados son bloqueados** sin accionar ninguna válvula física y el 100 % queda registrado en auditoría. |
 
 ---
 
@@ -51,58 +52,57 @@ Siguiendo la plantilla formal de seis partes de Bass, Clements y Kazman (2021), 
 
 **Respuesta:**  
 
-| Criterio | Monolito Modular (Alternativa elegida) | Microservicios (Alternativa descartada) |
+| Criterio | Monolito Modular (Alternativa elegida, 4,15) | Microservicios / Eventos (Alternativa descartada, 3,05) |
 |---|---|---|
-| **Costo económico** | **Bajo:** Se despliega en un único VPS modesto (R-03). Comparte memoria de proceso, una sola base de datos (con esquemas lógicos) y un proxy inverso Nginx. | **Alto:** Requiere múltiples máquinas virtuales o clusters de contenedores (Kubernetes), bases de datos independientes por servicio, redes virtuales privadas y almacenamiento segregado. |
-| **Modificabilidad** | **Alta dentro del código:** Cada módulo tiene interfaces públicas delimitadas. Agregar un módulo o modificar uno existente no afecta al resto si se respetan las fronteras lógicas. | **Máxima e independiente:** Despliegue, versionado y ciclo de vida de cada servicio desacoplado al 100 %, permitiendo que distintos equipos trabajen y desplieguen sin coordinar lanzamientos globales. |
-| **Complejidad operativa** | **Baja:** Un solo binario/proceso, un único pipeline de integración/despliegue continuo (CI/CD), logging centralizado local y monitoreo sencillo. | **Extrema:** Requiere orquestación de contenedores, API Gateways, Service Mesh, brokers de mensajería (RabbitMQ/Kafka), monitoreo distribuido (trazabilidad con Jaeger/Zipkin) y gestión de fallos parciales en red. |
+| **Costo económico** | **Bajo:** Se aloja completamente en un único VPS modesto (R-03). Comparte recursos de CPU/RAM, un solo motor PostgreSQL y un proxy Nginx. | **Alto:** Requiere múltiples contenedores o VMs, base de datos dedicada por servicio, brokers de mensajería (RabbitMQ/Kafka) e infraestructura de observabilidad distribuida. |
+| **Modificabilidad** | **Alta dentro del monolito:** Módulos de dominio (*Lecturas*, *Riego*, *Válvulas*, *Alertas*, *Dispositivos*) delimitados con interfaces públicas explícitas. Permite añadir nuevos sensores sin alterar otros módulos. | **Máxima e independiente:** Despliegue y ciclo de vida segregado por servicio, permitiendo versionar de forma independiente cada servicio en producción. |
+| **Complejidad operativa** | **Baja:** Un solo proceso, un único repositorio, despliegue simple y pruebas directas; compatible con un equipo de 2 developers (R-02) y plazo de 1 mes (R-01). | **Muy alta:** Requiere gestión de redes distribuidas, service discovery, tolerancia a particiones de red y monitoreo distribuido, excediendo la capacidad operativa del equipo. |
 
-**¿En qué momento convendría migrar de un monolito modular a microservicios?**  
-La migración se justificaría únicamente cuando se alcancen al menos dos de los siguientes hitos:
-1. **Crecimiento drástico del equipo:** Si la organización pasa de 2 developers (R-02) a más de 3 o 4 equipos autónomos independientes que sufren cuellos de botella al desplegar en un repositorio común.
-2. **Asimetría extrema de carga/escalabilidad:** Si un módulo específico (por ejemplo, el tracking GPS de recojo o ingesta masiva de solicitudes) requiere escalar horizontalmente a decenas de instancias, mientras que los módulos de *Distritos y Reglas* o *Reportes* apenas reciben unas pocas peticiones al día.
-3. **Requerimientos tecnológicos heterogéneos:** Si un servicio específico necesita implementarse en un stack especializado (ej. Rust/Go para cálculo geoespacial intensivo) incompatible con el runtime principal de Django.
+**¿En qué momento convendría migrar a microservicios?**  
+La migración solo se justificaría si:
+1. El número de parcelas y sensores escala a cientos de miles, provocando que la ingesta de telemetría de humedad requiera un escalado horizontal asimétrico independiente de los módulos administrativos.
+2. El equipo de desarrollo crece y se divide en múltiples escuadrones autónomos donde la coordinación en un único repositorio se vuelve un cuello de botella organizativo.
 
 ---
 
 ### 5. ¿Qué ventajas ofrece Diagram as Code frente a herramientas de dibujo como PowerPoint? Mencione al menos tres.
 
 **Respuesta:**  
-1. **Versionabilidad y trazabilidad en Git:** Al estar escrito en texto plano (`.mmd`, `.puml`, `.py`), cada cambio en la arquitectura se documenta mediante commits, se revisa en Pull Requests y permite visualizar diferencias línea por línea (`git diff`), a diferencia de los archivos binarios de PowerPoint donde no hay diff legible.
-2. **Mantenibilidad y regeneración automatizada:** Modificar un componente o agregar una conexión solo requiere editar una línea de texto; la herramienta recalcula el layout automáticamente sin necesidad de reacomodar cuadros y flechas manualmente. Además, se integra en flujos automatizados de CI/CD (GitHub Actions).
-3. **Sinergia nativa con Modelos de Lenguaje (IA):** Los asistentes de IA pueden generar, auditar, refactorizar y corregir diagramas estructurados en texto rápidamente, posibilitando flujos de trabajo ágiles y reproducibles entre personas y herramientas automáticas.
+1. **Versionabilidad y trazabilidad en Git:** Cada modificación del diagrama queda registrada en commits, permitiendo revisiones en Pull Requests y comparativas visuales de diferencias (`git diff`) línea por línea en texto claro.
+2. **Mantenibilidad y regeneración sin redibujar:** Modificar un nodo, conector o estilo solo requiere editar una línea de texto (`.mmd`, `.puml`, `.py`); el motor de layout reorganiza automáticamente los elementos sin necesidad de alinear manualmente cajas y flechas.
+3. **Automatización en CI/CD y sinergia con IA:** Permite automatizar la compilación a imágenes PNG/SVG mediante pipelines (como GitHub Actions) y facilita que los asistentes de IA propongan, revisen o refactoricen arquitecturas directamente en código ejecutable.
 
 ---
 
 ### 6. ¿Qué elementos debe contener un ADR y por qué es importante registrar también las alternativas descartadas?
 
 **Respuesta:**  
-Siguiendo el estándar de Michael Nygard (2011), un ADR debe contener:
-1. **Título y Metadatos:** Identificador numérico, estado (*Propuesto*, *Aceptado*, *Rechazado*, *Superado*), fecha y decisores.
-2. **Contexto:** El problema técnico o de negocio que motiva la decisión, citando explícitamente los drivers que lo condicionan (requisitos funcionales, atributos de calidad y restricciones).
-3. **Alternativas consideradas:** Las opciones viables evaluadas junto a sus pros y contras.
-4. **Decisión:** La solución elegida redactada en voz activa (*"Usaremos..."* o *"Decidimos..."*).
-5. **Consecuencias:** Impacto positivo (ganancias) y negativo (riesgos, costos o deudas técnicas asumidas).
+Siguiendo el estándar de Michael Nygard (2011), un Architecture Decision Record debe contener:
+- **Título y Metadatos:** Identificador numérico, estado (*Aceptado*, *Propuesto*, etc.), fecha y autores/decisores.
+- **Contexto:** Motivación y drivers que condicionan la decisión (citando RF-, QA- y R-).
+- **Alternativas consideradas:** Las opciones viables evaluadas con sus pros y contras.
+- **Decisión:** La elección adoptada formulada en voz activa (*"Usaremos..."*).
+- **Consecuencias:** Impacto positivo y negativo (riesgos y trade-offs asumidos).
 
-**Por qué es importante registrar las alternativas descartadas:**  
-Registrar las opciones descartadas evita el fenómeno de la "amnesia arquitectónica": cuando nuevos desarrolladores se incorporan al proyecto o se presentan dificultades, es común que sugieran soluciones alternativas que parecen lógicas a primera vista (por ejemplo, *"¿por qué no usamos microservicios?"*). El ADR deja constancia explícita de por qué esa opción fue evaluada y rechazada frente a las restricciones del caso (R-01 de 1 mes y R-03 de presupuesto), impidiendo discusiones cíclicas y decisiones impulsivas.
+**Importancia de registrar alternativas descartadas:**  
+Evita la "amnesia arquitectónica". Si no se registran las razones por las cuales se rechazó una opción (por ejemplo, por qué no se usó MQTT o por qué no se cerraba la válvula desde la nube), futuros ingenieros podrían volver a proponer esas mismas ideas sin conocer las restricciones reales (intermitencia de red R-04 o presupuesto R-03) que ya las invalidaron.
 
 ---
 
 ### 7. Describa un caso de esta práctica en el que la IA haya generado una propuesta incorrecta o sesgada. ¿Cómo lo detectaron?
 
 **Respuesta:**  
-En la **Interacción 1** del diseño arquitectónico ([`bitacora-ia.md`](architecture/bitacora-ia.md) y [`matriz-decision.md`](architecture/matriz-decision.md) §5.1), la IA generó una matriz de decisión donde le asignó un peso elevado a **"Escalabilidad"**, argumentando de forma genérica que *"todo sistema moderno debe estar preparado para escalar"*, lo cual favorecía artificialmente la opción de microservicios con Kubernetes.
+En la propuesta inicial para el caso *ChacraSmart Majes* ([`matriz-decision.md`](architecture/matriz-decision.md) §5.1 y §5.3), la IA propuso que ante la pérdida de conexión a internet mientras una válvula está regando, *"el servidor en la nube detecta la desconexión y envía la orden de cierre a la válvula"*.
 
 **Cómo lo detectamos:**  
-El equipo contrastó de forma sistemática cada criterio propuesto contra los drivers del Caso 10 de la guía. Se constató que el enunciado de *EcoRecicla AQP* **no declara ningún pico de concurrencia, ni tráfico de miles de usuarios simultáneos, ni ingesta masiva de sensores** (a diferencia de otros casos como *AgroConecta* o *RutaSIT*).  
-El único atributo de calidad con medida numérica obligatoria en el enunciado es la **Modificabilidad (QA-01)**. Introducir un criterio con peso alto sin sustento en el enunciado evidenció el típico sesgo de los LLM hacia tecnologías de moda (*hype-driven architecture*). Se corrigió bajando su peso al 10% y condicionando la elección a las restricciones reales: 2 developers (R-02) y 1 mes de plazo (R-01).
+El equipo analizó lógicamente la propuesta contra las restricciones del caso: la restricción R-04 establece que en las parcelas de Majes la **conexión es intermitente**. Si se cae la red celular o el enlace satelital, **ningún paquete o comando puede viajar desde el servidor hacia la válvula física**. Asumir que el servidor puede cerrar la válvula sin conexión es una imposibilidad física y un fallo crítico contra el atributo de *safety* (QA-01).  
+Se corrigió definiendo en el [ADR-003](architecture/adr/003-apagado-seguro-en-controlador.md) que cada orden de riego debe viajar con un parámetro obligatorio de duración máxima, de modo que el **controlador de campo ejecuta el cierre autónomamente mediante un temporizador local**, garantizando la falla segura sin depender de la conectividad.
 
 ---
 
 ### 8. ¿Qué riesgos éticos y de confidencialidad existen al usar asistentes de IA para diseñar la arquitectura de un sistema real?
 
 **Respuesta:**  
-1. **Fuga de información confidencial y datos personales:** Al enviar prompts a proveedores de LLMs externos, se corre el riesgo de filtrar secretos comerciales, topologías internas de red, credenciales o datos protegidos (como domicilios de ciudadanos bajo la Ley 29733). Para mitigar esto, ningún prompt debe contener datos reales de producción ni información privada.
-2. **Delegación acrítica de responsabilidad (riesgo ético y profesional):** Si un equipo asume ciegamente las sugerencias de la IA sin verificación formal, traslada la toma de decisiones arquitectónicas a un modelo probabilístico. En sistemas reales (por ejemplo, sector salud o infraestructura crítica), las fallas derivadas de alucinaciones o supuestos erróneos de la IA son responsabilidad legal y ética exclusiva de los ingenieros firmantes, no del asistente.
-3. **Dependencia tecnológica y sesgos de entrenamiento:** Los modelos tienden a favorecer tecnologías promovidas masivamente en repositorios públicos anglosajones (nubes hiper-escaladas como AWS, stacks complejos), penalizando alternativas locales, abiertas o de bajo costo (como VPS sencillos, OSRM libre o monolitos bien estructurados) que son las más éticas y viables para proyectos con recursos públicos o comunitarios limitados.
+1. **Fuga de datos confidenciales y normativos:** Subir detalles sobre ubicaciones de predios, teléfonos de productores o esquemas internos de red a modelos comerciales externos vulnera la privacidad y normativas como la Ley 29733 de Protección de Datos Personales. En esta práctica, los prompts se anonimizaron estrictamente sin incluir datos privados.
+2. **Responsabilidad profesional no delegable en sistemas críticos (*safety*):** En sistemas con impacto en el mundo físico (como el control de válvulas agrícolas donde un error puede arruinar cultivos por inundación o sequía), la IA no asume responsabilidad legal ni ética. Los ingenieros deben verificar críticamente y probar mediante código cada supuesto generado.
+3. **Sesgo hacia arquitecturas sobredimensionadas (*hype*):** Los modelos tienden a sugerir microservicios, brokers complejos o servicios en la nube costosos. En proyectos reales con presupuesto limitado, adoptar estas propuestas acríticamente encarece los costos y puede llevar el proyecto al fracaso operativo.
