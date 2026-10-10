@@ -27,7 +27,7 @@
 |---|-------|-------------|------------------|-------------------|------------------------------|----------|
 | 1 | 10/10 | Asistente IA (CLI) | **Prompt IA 1** — Diagrama de clases de los módulos Riego y Control de válvulas, adaptando el prompt de la guía al caso 9: contexto del ADR-001, historia y criterios de aceptación | 6+ clases de dominio (`Agricultor`, `Parcela`, `Valvula`, `ProgramacionRiego`, `LecturaHumedad`), 2 enumeraciones, 3 puertos (`ControladorValvula`, `Notificador`, `RepositorioRiego`) y 2 adaptadores | **Coherencia con el ADR-001:** la IA tiende a poner la lógica de infraestructura en la entidad; se corrigió para que la entidad **no dependa del adaptador**: todo pasa por el puerto `ControladorValvula`, mediado por `ServicioRiego`. **QA-01:** la falla segura existe como operación del dominio (`fallarCierreSeguro()`) y `aperturaMaximaMin` limita el temporizador local (ADR-003). **C3:** multiplicidad en ambos extremos de todas las asociaciones (parcela–válvula como composición `1..*`). **C5:** nombres del dominio idénticos a drivers.md/ADR-001. **Nombre del módulo E6:** decidido por el equipo (`src/valvulas_riego`, el guion no es válido en Python) | **Corregida** — la entidad no habla con el adaptador; `ServicioRiego` media por puertos. Resto verificado y aceptado |
 | 2 | 10/10 | Asistente IA (CLI) | **Prompt IA 2** — Diagrama de secuencia del flujo "programar un riego y abrir la válvula remota", con `alt`, `loop`/`opt` y un mensaje asíncrono | 9 líneas de vida (actor, PWA, controlador, servicio, repositorio, entidades y el puerto hacia el controlador de campo). `alt` para éxito vs válvula fuera de línea, `loop` de reintentos de apertura, `opt` de cierre por temporizador local (ADR-003) y 2 mensajes asíncronos a `Notificador` | **Regla C1:** el mensaje `S -> R : buscarValvulasPorParcela(parcelaId)` no existía como operación de `RepositorioRiego`; se **agregó al diagrama de clases** (procedimiento del E2, paso 5). Se verificaron uno a uno los demás mensajes contra las operaciones de `clases.puml`: `iniciar()`, `finalizar()`, `abrir()`, `confirmarApertura()`, `cerrar()`, `notificarAlerta()` — todos existen | **Corregida** — `buscarValvulasPorParcela()` añadida a `RepositorioRiego`. Resto verificado y aceptado |
-| 3 | 10/10 | *(pendiente E3)* | | | | |
+| 3 | 10/10 | Asistente IA (CLI) | **Prompt IA 3** — Máquina de estados de `Valvula` en Mermaid (`stateDiagram-v2`) con los 5 estados de la Tabla 7 y transiciones nombradas con operaciones (C2) | `[*] → CERRADA → ABRIENDO → ABIERTA → CERRANDO → …`, más la transición de **Falla (cierre seguro)** por pérdida de conexión o fallo del actuador; 6 guardas entre corchetes y una nota en `FALLA` | **Regla C2:** la transición `CERRANDO → CERRADA` no tenía operación que la provocara; se agregó **`confirmarCierre()`** a `Valvula` en `clases.puml` (mismo caso que `aceptarPreparacion()` del ejemplo docente). Verificado: los 5 estados coinciden **exactamente** con la enumeración `EstadoValvula` (C5) y ningún estado queda sin salida salvo `FALLA` (final) | **Corregida** — `confirmarCierre()` añadida a `Valvula`. Resto aceptado |
 | 4 | 10/10 | *(pendiente E4)* | | | | |
 | 5 | 10/10 | *(pendiente E5)* | | | | |
 | 6 | 10/10 | *(pendiente E6)* | | | | |
@@ -75,6 +75,20 @@ como operación del puerto (E2, paso 5 de la guía). Los demás (`iniciar`, `fin
 **Evidencia:** [`secuencia-programar-riego.puml`](secuencia-programar-riego.puml) y la línea `buscarValvulasPorParcela`
 en [`clases.puml`](clases.puml).
 
+### Fila 3 — la transición sin operación se detecta al escribir la guarda (E3)
+
+La máquina de estados de la válvula salió con los 5 estados del foco de la Tabla 7, pero al nombrar cada
+transición con la operación que la provoca (regla C2) apareció el mismo hueco que en el ejemplo docente: la
+transición `CERRANDO → CERRADA` (válvula termina de cerrarse) no tenía operación. Se agregó
+`confirmarCierre()` a `Valvula` en `clases.puml`.
+
+Además se verificó C5: los identificadores de estado en `estados-valvula.mmd` son idénticos a la enumeración
+`EstadoValvula` de `clases.puml` (`CERRADA, ABRIENDO, ABIERTA, CERRANDO, FALLA`), y el único estado sin
+transición de salida es `FALLA`, que es final (requiere técnico, fuera del MVP).
+
+**Evidencia:** [`estados-valvula.mmd`](estados-valvula.mmd) y la operación `confirmarCierre()` en
+[`clases.puml`](clases.puml).
+
 ---
 
 ## Anexo: prompts completos
@@ -120,4 +134,24 @@ Requisitos:
   clases.puml (regla C1); si inventas uno, márcalo para revisarlo.
 
 Solo el código PlantUML.
+```
+
+### Prompt IA 3 — Máquina de estados (E3)
+
+```
+Escribe en Mermaid (stateDiagram-v2) la máquina de estados de la entidad
+Valvula del sistema ChacraSmart Majes. Estados exactos (Tabla 7 de la guía):
+CERRADA, ABRIENDO, ABIERTA, CERRANDO y FALLA (cierre seguro).
+
+Requisitos:
+- Estado inicial [*] y al menos un estado final.
+- 2 o más guardas entre corchetes.
+- Cada transición nombrada con la operación de Valvula que la provoca (regla
+  C2): abrir(duracionMin), confirmarApertura(), cerrar(), confirmarCierre() y
+  fallarCierreSeguro(). Si una transición no tiene operación, dimelo en un
+  comentario en vez de inventarla.
+- FALLA representa el cierre seguro (QA-01, ADR-003): la válvula termina
+  cerrada por el temporizador local del controlador de campo.
+
+Solo el código Mermaid.
 ```

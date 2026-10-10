@@ -1,0 +1,19 @@
+%% ChacraSmart Majes — Lab 05 (UML como código) · Caso 9 · Grupo 04
+%% E3: máquina de estados de la entidad Valvula (Mermaid stateDiagram-v2).
+%% Foco de la Tabla 7: Válvula: Cerrada, Abriendo, Abierta, Cerrando, Falla (cierre seguro).
+%% Regla C2: cada transición está nombrada con la operación de Valvula (clases.puml) que la provoca.
+stateDiagram-v2
+    [*] --> CERRADA : instalación del dispositivo
+    CERRADA --> ABRIENDO : abrir() [orden recibida]
+    ABRIENDO --> ABIERTA : confirmarApertura() [acuse recibido]
+    ABRIENDO --> FALLA : fallarCierreSeguro() [sin acuse o timeout]
+    ABIERTA --> CERRANDO : cerrar() [duración cumplida o orden remota]
+    ABIERTA --> FALLA : fallarCierreSeguro() [pérdida de conexión]
+    CERRANDO --> CERRADA : confirmarCierre() [acuse de cierre]
+    CERRANDO --> FALLA : fallarCierreSeguro() [actuador atascado]
+    FALLA --> [*]
+    note right of FALLA
+        Cierre seguro (QA-01): la válvula termina cerrada
+        y se registra el evento. Requiere intervención
+        del técnico; queda fuera del MVP.
+    end note

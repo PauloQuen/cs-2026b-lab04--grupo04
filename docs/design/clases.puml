@@ -28,6 +28,7 @@ class Valvula {
   + abrir(duracionMin: int): void
   + cerrar(): void
   + confirmarApertura(): void
+  + confirmarCierre(): void
   + fallarCierreSeguro(): void
 }
 class ProgramacionRiego {
