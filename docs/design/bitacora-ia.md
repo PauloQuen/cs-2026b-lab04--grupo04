@@ -30,7 +30,7 @@
 | 3 | 10/10 | Asistente IA (CLI) | **Prompt IA 3** — Máquina de estados de `Valvula` en Mermaid (`stateDiagram-v2`) con los 5 estados de la Tabla 7 y transiciones nombradas con operaciones (C2) | `[*] → CERRADA → ABRIENDO → ABIERTA → CERRANDO → …`, más la transición de **Falla (cierre seguro)** por pérdida de conexión o fallo del actuador; 6 guardas entre corchetes y una nota en `FALLA` | **Regla C2:** la transición `CERRANDO → CERRADA` no tenía operación que la provocara; se agregó **`confirmarCierre()`** a `Valvula` en `clases.puml` (mismo caso que `aceptarPreparacion()` del ejemplo docente). Verificado: los 5 estados coinciden **exactamente** con la enumeración `EstadoValvula` (C5) y ningún estado queda sin salida salvo `FALLA` (final) | **Corregida** — `confirmarCierre()` añadida a `Valvula`. Resto aceptado |
 | 4 | 10/10 | Asistente IA (CLI) + **revisión con usuario** | **Prompt IA 4** — Diagrama de actividades "riego automático según la humedad del suelo": particiones, decisiones y fork/join | 4 particiones (Sensor, Sistema, Controlador de campo, Agricultor), 2 decisiones (humedad bajo umbral; válvula en línea) y un `fork` que notifica al agricultor en paralelo con el cierre por temporizador local | **Cambio surgido de la revisión con usuario (E4, paso 3):** un compañero actuando como agricultor señaló que de nada sirve avisar "riego finalizado" si el riego **nunca empezó**: se agregó la rama `else` que notifica la alerta de *válvula fuera de línea* (CA-03). También se verificó que el cierre por temporizador local queda **dentro del flujo** (QA-01/ADR-003) | **Corregida** — rama de alerta "fuera de línea" añadida en la revisión con usuario |
 | 5 | 10/10 | Asistente IA (CLI) | **Prompt IA 5** — Diagrama de paquetes: un paquete por módulo del ADR-001, dependencias etiquetadas y la regla de dependencias en una nota | 6 paquetes (5 módulos del ADR-001 + `compartido`), dependencias etiquetadas con la clase/puerto usado y nota con la regla *sin ciclos* | **Regla C4 (sin ciclos):** se trazó el grafo dirigido `programacion → control_valvulas → dispositivos` y `programacion → lecturas → alertas → dispositivos`: **acíclico**. La flecha `programacion ..> lecturas` no estaba en la vista gruesa del Lab 04 y se justifica por el diseño detallado (`ServicioRiego` usa `LecturaHumedad`) — se documentó **sin crear el ADR-004**, porque la guía solo pide ADR nuevo *si aparece un ciclo* | **Aceptada** — grafo verificado acíclico; no se requirió ADR-004 |
-| 6 | 10/10 | *(pendiente E6)* | | | | |
+| 6 | 10/10 | Asistente IA (CLI) + **pyreverse ejecutado** | **Prompt IA · E6** — Ingeniería directa: esqueleto Python 3.10 (dataclasses, type hints, ABC para puertos) de `clases.puml`, respetando nombres y multiplicidades | `src/valvulas_riego/dominio.py` con entidades, 3 puertos (ABC), 2 adaptadores y `ServicioRiego` con lógica mínima (guardas de estado y de `apertura_maxima_min`) | **Se ejecutó el código** (no se leyó): el ciclo de vida de `Valvula` CERRADA→ABRIENDO→ABIERTA→CERRANDO→CERRADA y la falla segura pasan aserciones reales; la duración > máximo se rechaza (QA-01). **Ingeniería inversa con `pyreverse` ejecutada**: reveló 7 diferencias documentadas en `round-trip.md` (composición no inferida, puertos como `{abstract}`, `snake_case`, paquetes planos). Lo más notable: los métodos de adaptadores figuran `{abstract}` por levantar `NotImplementedError` | **Corregida** — se validó el código ejecutándolo; las 7 diferencias del round-trip se documentan con causa y acción, sin tocar el diseño |
 | 7 | 10/10 | *(pendiente E7)* | | | | |
 
 ---
@@ -100,6 +100,21 @@ del flujo, en paralelo con la notificación.
 
 **Evidencia:** el comentario de revisión al inicio de [`actividades-riego-automatico.puml`](actividades-riego-automatico.puml)
 y la rama `else (no) → Recibe la alerta de dispositivo fuera de línea`.
+
+### Fila 6 — el round-trip se ejecuta, no se imagina (E6)
+
+La ingeniería directa generó `src/valvulas_riego/dominio.py`. La verificación no fue leerlo: fue **ejecutarlo**
+con aserciones (ciclo de vida completo de la válvula según E3, guarda de `apertura_maxima_min`, programación de
+riego). La ingeniería inversa tampoco: se corrió `pyreverse` de verdad y las 7 diferencias de
+[`round-trip.md`](round-trip.md) son las que salieron del comando, no las que esperábamos.
+
+El hallazgo más interesante salió solo: `pyreverse` marca `{abstract}` a los métodos de los adaptadores porque su
+cuerpo solo `raise NotImplementedError` — la misma limitación que el ejemplo docente registra para
+`YapeAdapter`. Y `ServicioRiego.evaluar_riego_automatico()` figura `{abstract}` **sin ser** `@abstractmethod`,
+por el mismo motivo: es un stub intencional (E4).
+
+**Evidencia:** [`round-trip.md`](round-trip.md), [`classes-valvulas-riego-pyreverse.puml`](classes-valvulas-riego-pyreverse.puml)
+y el PNG [`img/classes_valvulas_riego.png`](img/classes_valvulas_riego.png).
 
 ---
 
@@ -183,4 +198,15 @@ ChacraSmart Majes (monolito modular, ADR-001). Requisitos:
   aviso cuando termina.
 
 Solo el código PlantUML.
+```
+
+### Prompt IA · E6 — Ingeniería directa (round-trip)
+
+```
+Genera el esqueleto en Python 3.10 (dataclasses y type hints) del siguiente
+diagrama de clases. Respeta exactamente los nombres de clases, atributos y
+operaciones (en snake_case), las enumeraciones, la interfaz como clase
+abstracta (ABC) y las multiplicidades. Implementa solo la lógica mínima de
+las operaciones de Valvula y ProgramacionRiego; los adaptadores deben lanzar
+NotImplementedError. [pegar clases.puml]
 ```

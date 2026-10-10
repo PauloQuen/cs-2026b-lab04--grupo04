@@ -1,0 +1,7 @@
+@startuml packages_valvulas_riego
+set namespaceSeparator none
+package "valvulas_riego" as valvulas_riego {
+}
+package "valvulas_riego.dominio" as valvulas_riego.dominio {
+}
+@enduml

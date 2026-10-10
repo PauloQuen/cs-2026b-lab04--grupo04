@@ -1,0 +1,80 @@
+@startuml classes_valvulas_riego
+set namespaceSeparator none
+class "Agricultor" as valvulas_riego.dominio.Agricultor {
+  celular : str
+  id : UUID
+  nombre : str
+}
+class "ControladorCampoAdapter" as valvulas_riego.dominio.ControladorCampoAdapter {
+  {abstract}abrir(valvula_id: UUID, duracion_min: int) -> None
+  {abstract}cerrar(valvula_id: UUID) -> None
+  {abstract}consultar_estado(valvula_id: UUID) -> EstadoValvula
+}
+class "ControladorValvula" as valvulas_riego.dominio.ControladorValvula {
+  {abstract}abrir(valvula_id: UUID, duracion_min: int) -> None
+  {abstract}cerrar(valvula_id: UUID) -> None
+  {abstract}consultar_estado(valvula_id: UUID) -> EstadoValvula
+}
+class "EstadoProgramacion" as valvulas_riego.dominio.EstadoProgramacion {
+  name
+}
+class "EstadoValvula" as valvulas_riego.dominio.EstadoValvula {
+  name
+}
+class "LecturaHumedad" as valvulas_riego.dominio.LecturaHumedad {
+  fecha_hora : datetime
+  id : UUID
+  valor_porcentaje
+  esta_bajo_umbral(umbral: Decimal) -> bool
+}
+class "MensajeriaAdapter" as valvulas_riego.dominio.MensajeriaAdapter {
+  {abstract}notificar_alerta(agricultor_id: UUID, mensaje: str) -> None
+}
+class "Notificador" as valvulas_riego.dominio.Notificador {
+  {abstract}notificar_alerta(agricultor_id: UUID, mensaje: str) -> None
+}
+class "Parcela" as valvulas_riego.dominio.Parcela {
+  distrito : str
+  id : UUID
+  lecturas : list[LecturaHumedad]
+  nombre : str
+  valvulas : list[Valvula]
+  humedad_actual() -> LecturaHumedad | None
+}
+class "ProgramacionRiego" as valvulas_riego.dominio.ProgramacionRiego {
+  duracion_min : int
+  estado
+  hora_inicio : datetime
+  id : UUID
+  valvula_id : UUID
+  cancelar(motivo: str) -> None
+  finalizar() -> None
+  iniciar() -> None
+}
+class "RepositorioRiego" as valvulas_riego.dominio.RepositorioRiego {
+  {abstract}buscar_valvula(id: UUID) -> Valvula
+  {abstract}buscar_valvulas_por_parcela(parcela_id: UUID) -> list[Valvula]
+  {abstract}guardar_programacion(p: ProgramacionRiego) -> None
+}
+class "ServicioRiego" as valvulas_riego.dominio.ServicioRiego {
+  apertura_remota(valvula_id: UUID, duracion_min: int) -> None
+  {abstract}evaluar_riego_automatico(parcela_id: UUID) -> None
+  programar_riego(parcela_id: UUID, hora_inicio: datetime, duracion_min: int) -> ProgramacionRiego
+}
+class "Valvula" as valvulas_riego.dominio.Valvula {
+  apertura_maxima_min : int
+  estado
+  id : UUID
+  nombre : str
+  parcela_id : UUID
+  abrir(duracion_min: int) -> None
+  cerrar() -> None
+  confirmar_apertura() -> None
+  confirmar_cierre() -> None
+  fallar_cierre_seguro() -> None
+}
+valvulas_riego.dominio.ControladorCampoAdapter --|> valvulas_riego.dominio.ControladorValvula
+valvulas_riego.dominio.MensajeriaAdapter --|> valvulas_riego.dominio.Notificador
+valvulas_riego.dominio.ProgramacionRiego --> valvulas_riego.dominio.EstadoProgramacion : estado
+valvulas_riego.dominio.Valvula --> valvulas_riego.dominio.EstadoValvula : estado
+@enduml
