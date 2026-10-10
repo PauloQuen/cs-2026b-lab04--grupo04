@@ -90,7 +90,7 @@ class MensajeriaAdapter <<adaptador>>
 
 ' --- Relaciones con multiplicidad en ambos extremos (regla C3) ---
 Agricultor "1" -- "0..*" Parcela : posee >
-Parcela "1" *-- "1..*" Valvula : contiene >
+Parcela "1" *-- "0..*" Valvula : contiene >
 Parcela "1" -- "0..*" LecturaHumedad : registra >
 Parcela "1" -- "0..*" ProgramacionRiego : programa >
 ProgramacionRiego "0..*" --> "1" Valvula : activa >

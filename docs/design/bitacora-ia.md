@@ -25,13 +25,13 @@
 
 | # | Fecha | Herramienta | Prompt (resumen) | Qué propuso la IA | Qué verificamos o corregimos | Decisión |
 |---|-------|-------------|------------------|-------------------|------------------------------|----------|
-| 1 | 10/10 | Asistente IA (CLI) | **Prompt IA 1** — Diagrama de clases de los módulos Riego y Control de válvulas, adaptando el prompt de la guía al caso 9: contexto del ADR-001, historia y criterios de aceptación | 6+ clases de dominio (`Agricultor`, `Parcela`, `Valvula`, `ProgramacionRiego`, `LecturaHumedad`), 2 enumeraciones, 3 puertos (`ControladorValvula`, `Notificador`, `RepositorioRiego`) y 2 adaptadores | **Coherencia con el ADR-001:** la IA tiende a poner la lógica de infraestructura en la entidad; se corrigió para que la entidad **no dependa del adaptador**: todo pasa por el puerto `ControladorValvula`, mediado por `ServicioRiego`. **QA-01:** la falla segura existe como operación del dominio (`fallarCierreSeguro()`) y `aperturaMaximaMin` limita el temporizador local (ADR-003). **C3:** multiplicidad en ambos extremos de todas las asociaciones (parcela–válvula como composición `1..*`). **C5:** nombres del dominio idénticos a drivers.md/ADR-001. **Nombre del módulo E6:** decidido por el equipo (`src/valvulas_riego`, el guion no es válido en Python) | **Corregida** — la entidad no habla con el adaptador; `ServicioRiego` media por puertos. Resto verificado y aceptado |
-| 2 | 10/10 | Asistente IA (CLI) | **Prompt IA 2** — Diagrama de secuencia del flujo "programar un riego y abrir la válvula remota", con `alt`, `loop`/`opt` y un mensaje asíncrono | 9 líneas de vida (actor, PWA, controlador, servicio, repositorio, entidades y el puerto hacia el controlador de campo). `alt` para éxito vs válvula fuera de línea, `loop` de reintentos de apertura, `opt` de cierre por temporizador local (ADR-003) y 2 mensajes asíncronos a `Notificador` | **Regla C1:** el mensaje `S -> R : buscarValvulasPorParcela(parcelaId)` no existía como operación de `RepositorioRiego`; se **agregó al diagrama de clases** (procedimiento del E2, paso 5). Se verificaron uno a uno los demás mensajes contra las operaciones de `clases.puml`: `iniciar()`, `finalizar()`, `abrir()`, `confirmarApertura()`, `cerrar()`, `notificarAlerta()` — todos existen | **Corregida** — `buscarValvulasPorParcela()` añadida a `RepositorioRiego`. Resto verificado y aceptado |
-| 3 | 10/10 | Asistente IA (CLI) | **Prompt IA 3** — Máquina de estados de `Valvula` en Mermaid (`stateDiagram-v2`) con los 5 estados de la Tabla 7 y transiciones nombradas con operaciones (C2) | `[*] → CERRADA → ABRIENDO → ABIERTA → CERRANDO → …`, más la transición de **Falla (cierre seguro)** por pérdida de conexión o fallo del actuador; 6 guardas entre corchetes y una nota en `FALLA` | **Regla C2:** la transición `CERRANDO → CERRADA` no tenía operación que la provocara; se agregó **`confirmarCierre()`** a `Valvula` en `clases.puml` (mismo caso que `aceptarPreparacion()` del ejemplo docente). Verificado: los 5 estados coinciden **exactamente** con la enumeración `EstadoValvula` (C5) y ningún estado queda sin salida salvo `FALLA` (final) | **Corregida** — `confirmarCierre()` añadida a `Valvula`. Resto aceptado |
-| 4 | 10/10 | Asistente IA (CLI) + **revisión con usuario** | **Prompt IA 4** — Diagrama de actividades "riego automático según la humedad del suelo": particiones, decisiones y fork/join | 4 particiones (Sensor, Sistema, Controlador de campo, Agricultor), 2 decisiones (humedad bajo umbral; válvula en línea) y un `fork` que notifica al agricultor en paralelo con el cierre por temporizador local | **Cambio surgido de la revisión con usuario (E4, paso 3):** un compañero actuando como agricultor señaló que de nada sirve avisar "riego finalizado" si el riego **nunca empezó**: se agregó la rama `else` que notifica la alerta de *válvula fuera de línea* (CA-03). También se verificó que el cierre por temporizador local queda **dentro del flujo** (QA-01/ADR-003) | **Corregida** — rama de alerta "fuera de línea" añadida en la revisión con usuario |
-| 5 | 10/10 | Asistente IA (CLI) | **Prompt IA 5** — Diagrama de paquetes: un paquete por módulo del ADR-001, dependencias etiquetadas y la regla de dependencias en una nota | 6 paquetes (5 módulos del ADR-001 + `compartido`), dependencias etiquetadas con la clase/puerto usado y nota con la regla *sin ciclos* | **Regla C4 (sin ciclos):** se trazó el grafo dirigido `programacion → control_valvulas → dispositivos` y `programacion → lecturas → alertas → dispositivos`: **acíclico**. La flecha `programacion ..> lecturas` no estaba en la vista gruesa del Lab 04 y se justifica por el diseño detallado (`ServicioRiego` usa `LecturaHumedad`) — se documentó **sin crear el ADR-004**, porque la guía solo pide ADR nuevo *si aparece un ciclo* | **Aceptada** — grafo verificado acíclico; no se requirió ADR-004 |
+| 1 | 10/10 | Asistente IA (CLI) | **Prompt IA · E1** — Diagrama de clases de los módulos Riego y Control de válvulas, adaptando el prompt de la guía al caso 9: contexto del ADR-001, historia y criterios de aceptación | 6+ clases de dominio (`Agricultor`, `Parcela`, `Valvula`, `ProgramacionRiego`, `LecturaHumedad`), 2 enumeraciones, 3 puertos (`ControladorValvula`, `Notificador`, `RepositorioRiego`) y 2 adaptadores | **Coherencia con el ADR-001:** la IA tiende a poner la lógica de infraestructura en la entidad; se corrigió para que la entidad **no dependa del adaptador**: todo pasa por el puerto `ControladorValvula`, mediado por `ServicioRiego`. **QA-01:** la falla segura existe como operación del dominio (`fallarCierreSeguro()`) y `aperturaMaximaMin` limita el temporizador local (ADR-003). **C3:** multiplicidad en ambos extremos de todas las asociaciones (parcela–válvula como composición `1..*`). **C5:** nombres del dominio idénticos a drivers.md/ADR-001. **Nombre del módulo E6:** decidido por el equipo (`src/valvulas_riego`, el guion no es válido en Python) | **Corregida** — la entidad no habla con el adaptador; `ServicioRiego` media por puertos. Resto verificado y aceptado |
+| 2 | 10/10 | Asistente IA (CLI) | **Prompt IA · E2** — Diagrama de secuencia del flujo "programar un riego y abrir la válvula remota", con `alt`, `loop`/`opt` y un mensaje asíncrono | 9 líneas de vida (actor, PWA, controlador, servicio, repositorio, entidades y el puerto hacia el controlador de campo). `alt` para éxito vs válvula fuera de línea, `loop` de reintentos de apertura, `opt` de cierre por temporizador local (ADR-003) y 2 mensajes asíncronos a `Notificador` | **Regla C1:** el mensaje `S -> R : buscarValvulasPorParcela(parcelaId)` no existía como operación de `RepositorioRiego`; se **agregó al diagrama de clases** (procedimiento del E2, paso 5). Se verificaron uno a uno los demás mensajes contra las operaciones de `clases.puml`: `iniciar()`, `finalizar()`, `abrir()`, `confirmarApertura()`, `cerrar()`, `notificarAlerta()` — todos existen | **Corregida** — `buscarValvulasPorParcela()` añadida a `RepositorioRiego`. Resto verificado y aceptado |
+| 3 | 10/10 | Asistente IA (CLI) | **Prompt IA · E3** — Máquina de estados de `Valvula` en Mermaid (`stateDiagram-v2`) con los 5 estados de la Tabla 7 y transiciones nombradas con operaciones (C2) | `[*] → CERRADA → ABRIENDO → ABIERTA → CERRANDO → …`, más la transición de **Falla (cierre seguro)** por pérdida de conexión o fallo del actuador; 6 guardas entre corchetes y una nota en `FALLA` | **Regla C2:** la transición `CERRANDO → CERRADA` no tenía operación que la provocara; se agregó **`confirmarCierre()`** a `Valvula` en `clases.puml` (mismo caso que `aceptarPreparacion()` del ejemplo docente). Verificado: los 5 estados coinciden **exactamente** con la enumeración `EstadoValvula` (C5) y ningún estado queda sin salida salvo `FALLA` (final) | **Corregida** — `confirmarCierre()` añadida a `Valvula`. Resto aceptado |
+| 4 | 10/10 | Asistente IA (CLI) + **revisión con usuario** | **Prompt IA · E4** — Diagrama de actividades "riego automático según la humedad del suelo": particiones, decisiones y fork/join | 4 particiones (Sensor, Sistema, Controlador de campo, Agricultor), 2 decisiones (humedad bajo umbral; válvula en línea) y un `fork` que notifica al agricultor en paralelo con el cierre por temporizador local | **Cambio surgido de la revisión con usuario (E4, paso 3):** un compañero actuando como agricultor señaló que de nada sirve avisar "riego finalizado" si el riego **nunca empezó**: se agregó la rama `else` que notifica la alerta de *válvula fuera de línea* (CA-03). También se verificó que el cierre por temporizador local queda **dentro del flujo** (QA-01/ADR-003) | **Corregida** — rama de alerta "fuera de línea" añadida en la revisión con usuario |
+| 5 | 10/10 | Asistente IA (CLI) | **Prompt IA · E5** — Diagrama de paquetes: un paquete por módulo del ADR-001, dependencias etiquetadas y la regla de dependencias en una nota | 6 paquetes (5 módulos del ADR-001 + `compartido`), dependencias etiquetadas con la clase/puerto usado y nota con la regla *sin ciclos* | **Regla C4 (sin ciclos):** se trazó el grafo dirigido `programacion → control_valvulas → dispositivos` y `programacion → lecturas → alertas → dispositivos`: **acíclico**. La flecha `programacion ..> lecturas` no estaba en la vista gruesa del Lab 04 y se justifica por el diseño detallado (`ServicioRiego` usa `LecturaHumedad`) — se documentó **sin crear el ADR-004**, porque la guía solo pide ADR nuevo *si aparece un ciclo* | **Aceptada** — grafo verificado acíclico; no se requirió ADR-004 |
 | 6 | 10/10 | Asistente IA (CLI) + **pyreverse ejecutado** | **Prompt IA · E6** — Ingeniería directa: esqueleto Python 3.10 (dataclasses, type hints, ABC para puertos) de `clases.puml`, respetando nombres y multiplicidades | `src/valvulas_riego/dominio.py` con entidades, 3 puertos (ABC), 2 adaptadores y `ServicioRiego` con lógica mínima (guardas de estado y de `apertura_maxima_min`) | **Se ejecutó el código** (no se leyó): el ciclo de vida de `Valvula` CERRADA→ABRIENDO→ABIERTA→CERRANDO→CERRADA y la falla segura pasan aserciones reales; la duración > máximo se rechaza (QA-01). **Ingeniería inversa con `pyreverse` ejecutada**: reveló 7 diferencias documentadas en `round-trip.md` (composición no inferida, puertos como `{abstract}`, `snake_case`, paquetes planos). Lo más notable: los métodos de adaptadores figuran `{abstract}` por levantar `NotImplementedError` | **Corregida** — se validó el código ejecutándolo; las 7 diferencias del round-trip se documentan con causa y acción, sin tocar el diseño |
-| 7 | 10/10 | *(pendiente E7)* | | | | |
+| 7 | 10/10 | Asistente IA (CLI) — **auditor de consistencia** | **Prompt IA · E7** — Revisar los 5 diagramas con las reglas C1–C5 (Prompt 3 de la guía): reportar hallazgos en tabla (regla, elemento, problema, corrección), sin reescribir los diagramas | 5 hallazgos: C1 sin observaciones; C2: `FALLA --> [*]` "sin operación"; C3: multiplicidad `Parcela–Valvula 1..*` inconsistente con RF-06; C4: "ciclo vía compartido"; C5: solo salvedad `snake_case` | Se verificó cada hallazgo contra los archivos. **C3 fue real**: una parcela puede existir sin válvula (RF-06), se corrigió a `0..*`. **C2 y C4 fueron FALSOS POSITIVOS**: el `[*]` final no requiere operación (mismo patrón `ENTREGADO-->[*]` del docente) y el grafo de paquetes es un DAG (la IA leyó la nota como dependencia) | **1 corregida (C3) + 2 rechazadas (falsos positivos C2, C4)**; C1 y C5 aceptados |
 
 ---
 
@@ -116,11 +116,31 @@ por el mismo motivo: es un stub intencional (E4).
 **Evidencia:** [`round-trip.md`](round-trip.md), [`classes-valvulas-riego-pyreverse.puml`](classes-valvulas-riego-pyreverse.puml)
 y el PNG [`img/classes_valvulas_riego.png`](img/classes_valvulas_riego.png).
 
+### Fila 7 — el auditor también se equivoca, y eso se documenta (E7)
+
+La revisión de consistencia (Prompt IA auditor) devolvió una tabla de hallazgos C1–C5. La verificación del
+equipo, una por una, dejó el resultado que la guía espera: **al menos un falso positivo identificado y
+explicado**. En este caso fueron dos:
+
+- **C2 (`FALLA --> [*]` "sin operación")**: falso positivo. El `[*]` es un estado final; el propio ejemplo
+  docente dibuja `ENTREGADO --> [*]` y `CANCELADO --> [*]` sin operación. La C2 se cumple en todas las
+  transiciones *entre estados*.
+- **C4 ("ciclo vía compartido")**: falso positivo. Se trazó el grafo dirigido arista por arista: es un DAG. La
+  IA leyó la nota del `paquetes.puml` (*"control_valvulas NO depende de programacion"*) como si fuera una
+  dependencia más.
+
+Y uno **real**: C3 (`Parcela–Valvula 1..*`). RF-06 permite que el técnico registre una parcela antes de
+instalar sus válvulas, así que la multiplicidad se corrigió a `0..*` — exactamente el tipo de hallazgo que hace
+valiosa la revisión.
+
+**Evidencia:** [`consistencia.md`](consistencia.md) (tabla completa con veredictos) y la multiplicidad `0..*` en
+[`clases.puml`](clases.puml).
+
 ---
 
 ## Anexo: prompts completos
 
-### Prompt IA 1 — Diagrama de clases (E1)
+### Prompt IA · E1 — Diagrama de clases
 
 ```
 Actúa como diseñador de software orientado a objetos. Contexto: módulos de
@@ -142,7 +162,7 @@ historia; si asumes algo, indícalo en un comentario. Usa nombres del dominio
 del caso (válvula, parcela, riego), no genéricos.
 ```
 
-### Prompt IA 2 — Diagrama de secuencia (E2)
+### Prompt IA · E2 — Diagrama de secuencia
 
 ```
 Dibuja en PlantUML el diagrama de secuencia del escenario principal de esta
@@ -163,7 +183,7 @@ Requisitos:
 Solo el código PlantUML.
 ```
 
-### Prompt IA 3 — Máquina de estados (E3)
+### Prompt IA · E3 — Máquina de estados
 
 ```
 Escribe en Mermaid (stateDiagram-v2) la máquina de estados de la entidad
@@ -183,7 +203,7 @@ Requisitos:
 Solo el código Mermaid.
 ```
 
-### Prompt IA 4 — Diagrama de actividades (E4)
+### Prompt IA · E4 — Diagrama de actividades
 
 ```
 Modela en PlantUML el proceso "riego automático según la humedad del suelo" de
@@ -209,4 +229,18 @@ operaciones (en snake_case), las enumeraciones, la interfaz como clase
 abstracta (ABC) y las multiplicidades. Implementa solo la lógica mínima de
 las operaciones de Valvula y ProgramacionRiego; los adaptadores deben lanzar
 NotImplementedError. [pegar clases.puml]
+```
+
+### Prompt IA · E7 — Auditor de consistencia
+
+```
+Actúa como revisor de diseño. Te paso cinco diagramas UML en PlantUML/Mermaid:
+[pegar los cinco archivos de docs/design/]. Verifica estas reglas y responde en
+una tabla (regla, elemento, problema, corrección sugerida):
+C1 cada mensaje de secuencia es una operación de la clase receptora;
+C2 cada transición de estados corresponde a una operación de la clase;
+C3 multiplicidades coherentes con los criterios de aceptación;
+C4 paquetes sin ciclos;
+C5 nombres consistentes.
+No reescribas los diagramas; solo reporta hallazgos y cita la línea.
 ```
