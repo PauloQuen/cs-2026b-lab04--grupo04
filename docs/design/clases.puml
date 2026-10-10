@@ -1,0 +1,109 @@
+@startuml clases-valvulas-riego
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam classBackgroundColor #EEF2F8
+skinparam classBorderColor #1A3A5C
+title ChacraSmart Majes — Riego y control de válvulas (diseño · E1)
+skinparam nodesep 25
+skinparam ranksep 40
+
+' --- Actores y estructura del dominio (RF-03, RF-04) ---
+class Agricultor {
+  - id: UUID
+  - nombre: String
+  - celular: String
+}
+class Parcela {
+  - id: UUID
+  - nombre: String
+  - distrito: String
+  + humedadActual(): LecturaHumedad
+}
+class Valvula {
+  - id: UUID
+  - nombre: String
+  - estado: EstadoValvula
+  - aperturaMaximaMin: int
+  + abrir(duracionMin: int): void
+  + cerrar(): void
+  + confirmarApertura(): void
+  + fallarCierreSeguro(): void
+}
+class ProgramacionRiego {
+  - id: UUID
+  - horaInicio: DateTime
+  - duracionMin: int
+  - estado: EstadoProgramacion
+  + iniciar(): void
+  + finalizar(): void
+  + cancelar(motivo: String): void
+}
+class LecturaHumedad {
+  - id: UUID
+  - valorPorcentaje: Decimal
+  - fechaHora: DateTime
+  + estaBajoUmbral(umbral: Decimal): bool
+}
+
+' --- Enumeraciones (coherentes con E3) ---
+enum EstadoValvula {
+  CERRADA
+  ABRIENDO
+  ABIERTA
+  CERRANDO
+  FALLA
+}
+enum EstadoProgramacion {
+  PENDIENTE
+  EN_CURSO
+  FINALIZADA
+  CANCELADA
+}
+
+' --- Servicio de aplicación ---
+class ServicioRiego <<servicio>> {
+  + programarRiego(parcelaId: UUID, horaInicio: DateTime, duracionMin: int): ProgramacionRiego
+  + aperturaRemota(valvulaId: UUID, duracionMin: int): void
+  + evaluarRiegoAutomatico(parcelaId: UUID): void
+}
+
+' --- Puertos (interfaces) hacia servicios externos y persistencia ---
+interface ControladorValvula <<puerto>> {
+  + abrir(valvulaId: UUID, duracionMin: int): void
+  + cerrar(valvulaId: UUID): void
+  + consultarEstado(valvulaId: UUID): EstadoValvula
+}
+interface Notificador <<puerto>> {
+  + notificarAlerta(agricultorId: UUID, mensaje: String): void
+}
+interface RepositorioRiego <<puerto>> {
+  + buscarValvula(id: UUID): Valvula
+  + guardarProgramacion(p: ProgramacionRiego): void
+}
+
+' --- Adaptadores (ADR-001: integraciones externas detrás de puertos) ---
+class ControladorCampoAdapter <<adaptador>>
+class MensajeriaAdapter <<adaptador>>
+
+' --- Relaciones con multiplicidad en ambos extremos (regla C3) ---
+Agricultor "1" -- "0..*" Parcela : posee >
+Parcela "1" *-- "1..*" Valvula : contiene >
+Parcela "1" -- "0..*" LecturaHumedad : registra >
+Parcela "1" -- "0..*" ProgramacionRiego : programa >
+ProgramacionRiego "0..*" --> "1" Valvula : activa >
+Valvula --> EstadoValvula
+ProgramacionRiego --> EstadoProgramacion
+
+' --- Realización de puertos ---
+ControladorValvula <|.. ControladorCampoAdapter
+Notificador <|.. MensajeriaAdapter
+
+' --- Dependencias del servicio (usa puertos, no implementaciones) ---
+ServicioRiego ..> ProgramacionRiego
+ServicioRiego ..> Valvula
+ServicioRiego ..> LecturaHumedad
+ServicioRiego ..> ControladorValvula
+ServicioRiego ..> Notificador
+ServicioRiego ..> RepositorioRiego
+@enduml
