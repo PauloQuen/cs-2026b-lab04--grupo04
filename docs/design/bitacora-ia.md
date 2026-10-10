@@ -220,6 +220,21 @@ ChacraSmart Majes (monolito modular, ADR-001). Requisitos:
 Solo el código PlantUML.
 ```
 
+### Prompt IA · E5 — Diagrama de paquetes
+
+```
+Dibuja en PlantUML el diagrama de paquetes de la vista de desarrollo de
+ChacraSmart Majes. Un paquete por módulo del ADR-001: lecturas, programacion,
+control_valvulas, alertas y dispositivos; más un paquete "compartido"
+(chacrasmart) para tipos compartidos. Requisitos:
+- Dependencias etiquetadas con la clase/puerto que se usa.
+- Flecha programacion -> control_valvulas SOLO por el puerto
+  ControladorValvula (sin acoplar a dispositivos directamente).
+- Regla en una nota: sin ciclos (C4); control_valvulas NO depende de
+  programacion.
+Solo el código PlantUML.
+```
+
 ### Prompt IA · E6 — Ingeniería directa (round-trip)
 
 ```

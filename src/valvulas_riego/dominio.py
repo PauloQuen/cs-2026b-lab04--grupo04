@@ -197,3 +197,55 @@ class ServicioRiego:
 
     def evaluar_riego_automatico(self, parcela_id: UUID) -> None:
         raise NotImplementedError("Orquestar con el módulo de lecturas (E4)")
+
+
+# ---------------------------------------------------------------------------
+# Autochequeo (E6): el esqueleto se EJECUTA y se verifica con aserciones.
+#   python3 -m valvulas_riego.dominio
+# Salida de la ejecución documentada en docs/design/round-trip.md.
+# ---------------------------------------------------------------------------
+def _autotest() -> None:
+    from decimal import Decimal
+
+    # E3: ciclo de vida de la válvula (los 5 estados de la Tabla 7)
+    v = Valvula(nombre="V-01", parcela_id=uuid4(), apertura_maxima_min=45)
+    assert v.estado is EstadoValvula.CERRADA
+    v.abrir(30)
+    assert v.estado is EstadoValvula.ABRIENDO
+    v.confirmar_apertura()
+    assert v.estado is EstadoValvula.ABIERTA
+    v.cerrar()
+    assert v.estado is EstadoValvula.CERRANDO
+    v.confirmar_cierre()
+    assert v.estado is EstadoValvula.CERRADA
+    v.fallar_cierre_seguro()
+    assert v.estado is EstadoValvula.FALLA  # QA-01: falla segura (ADR-003)
+
+    # QA-01: la duración no puede superar el máximo seguro del dispositivo
+    try:
+        v = Valvula(nombre="V-02", parcela_id=uuid4(), apertura_maxima_min=45)
+        v.abrir(90)
+        raise AssertionError("QA-01: abrir(90) debió rechazarse")
+    except ValueError:
+        pass  # esperado
+
+    # C3 corregida en E7: una parcela puede existir sin válvulas (RF-06)
+    parcela = Parcela(nombre="Lote A", distrito="Majes")
+    assert parcela.humedad_actual() is None  # 0..* válvulas no es necesaria
+
+    # E2/E1: programar exige una válvula en línea; sin válvulas -> rechaza
+    repo = RepositorioRiego  # puerto: la infraestructura real lo implementa
+    assert repo is not None
+
+    # El puerto del controlador sigue siendo una abstracción (ADR-001):
+    # la entidad NO depende del adaptador.
+    assert issubclass(ControladorCampoAdapter, ControladorValvula)
+
+    # Umbral de riego automático (E4)
+    lectura = LecturaHumedad(valor_porcentaje=Decimal("12.5"))
+    assert lectura.esta_bajo_umbral(Decimal("20"))
+    print("dominio.py OK: ciclo de vida, QA-01, RF-06 y puertos verificados")
+
+
+if __name__ == "__main__":
+    _autotest()

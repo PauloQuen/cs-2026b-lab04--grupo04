@@ -171,6 +171,55 @@ class DB datos
 
 ---
 
+## Diseño UML (Lab 05)
+
+Segundo laboratorio del repositorio: el diseño de los módulos de **programación de riego y control de
+válvulas** (caso 9) modelado **como código** — PlantUML y Mermaid — desde la historia de usuario hasta el
+esqueleto en Python, con una bitácora de IA de 7 interacciones reales y una auditoría de consistencia que
+corrigió una multiplicidad y rechazó dos falsos positivos de la IA.
+
+| Entregable | Fuente | Imagen |
+|---|---|---|
+| **E1** Diagrama de clases (6+ clases, 3 puertos, 2 enumeraciones) | [`clases.puml`](docs/design/clases.puml) | ![clases](docs/design/img/clases-valvulas-riego.png) |
+| **E2** Secuencia "programar un riego y abrir la válvula remota" | [`secuencia-programar-riego.puml`](docs/design/secuencia-programar-riego.puml) | ![secuencia](docs/design/img/secuencia-programar-riego.png) |
+| **E3** Máquina de estados de `Valvula` (Tabla 7) | [`estados-valvula.mmd`](docs/design/estados-valvula.mmd) | ![estados](docs/design/img/estados-valvula.png) |
+| **E4** Actividades "riego automático según la humedad del suelo" | [`actividades-riego-automatico.puml`](docs/design/actividades-riego-automatico.puml) | ![actividades](docs/design/img/actividades-riego-automatico.png) |
+| **E5** Paquetes por módulo del ADR-001 (sin ciclos, C4) | [`paquetes.puml`](docs/design/paquetes.puml) | ![paquetes](docs/design/img/paquetes.png) |
+| **E6** Ingeniería directa: esqueleto Python + round-trip | [`round-trip.md`](docs/design/round-trip.md) · [`src/valvulas_riego/`](src/valvulas_riego/dominio.py) | — |
+| **E7** Historia de usuario y criterios de aceptación | [`historia.md`](docs/design/historia.md) | — |
+| **E7** Auditoría de consistencia C1–C5 (1 corrección + 2 falsos positivos) | [`consistencia.md`](docs/design/consistencia.md) | — |
+| **E7** Bitácora de IA (7 interacciones con evidencia) | [`bitacora-ia.md`](docs/design/bitacora-ia.md) | — |
+
+El corazón del diseño es la **máquina de estados de la válvula**: materializa la regla *safety* del caso
+(QA-01/ADR-003) en el propio modelo — la falla segura es un estado del dominio (`FALLA`), no un comentario:
+
+```mermaid
+stateDiagram-v2
+    [*] --> CERRADA : instalación del dispositivo
+    CERRADA --> ABRIENDO : abrir() [orden recibida]
+    ABRIENDO --> ABIERTA : confirmarApertura() [acuse recibido]
+    ABRIENDO --> FALLA : fallarCierreSeguro() [sin acuse o timeout]
+    ABIERTA --> CERRANDO : cerrar() [duración cumplida o orden remota]
+    ABIERTA --> FALLA : fallarCierreSeguro() [pérdida de conexión]
+    CERRANDO --> CERRADA : confirmarCierre() [acuse de cierre]
+    CERRANDO --> FALLA : fallarCierreSeguro() [actuador atascado]
+    FALLA --> [*]
+```
+
+**Reglas de la Tabla 2 aplicadas (y verificadas):** C1 (mensajes = operaciones), C2 (transiciones =
+operaciones), C3 (multiplicidades en ambos extremos), C4 (paquetes sin ciclos) y C5 (nombres consistentes
+entre diagramas, código e historias).
+
+```bash
+python3 tools/verificar-lab05.py
+```
+
+A diferencia de un verificador de keywords, este **implementa la lógica de las reglas**: construye el grafo
+dirigido de `paquetes.puml` y detecta ciclos con el algoritmo de Kahn (C4), y comprueba que todo mensaje de la
+secuencia y toda transición de estados exista como operación en `clases.puml` (C1/C2).
+
+---
+
 ## Decisiones arquitectónicas
 
 - [**ADR-001 — Estilo arquitectónico: monolito modular**](docs/architecture/adr/001-estilo-arquitectonico.md)

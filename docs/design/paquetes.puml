@@ -22,12 +22,12 @@ LEC ..> ALR : usa Notificador\n(puerto)
 CTRL ..> DIS : usa Valvula
 ALR ..> DIS : usa Agricultor
 
-' Compartido: tipos y utilidades de uso común
-LEC ..> COM
-PRO ..> COM
-CTRL ..> COM
-ALR ..> COM
-DIS ..> COM
+' Compartido: tipos y utilidades de uso común (etiquetado, regla E5)
+LEC ..> COM : usa LecturaHumedad
+PRO ..> COM : usa ProgramacionRiego
+CTRL ..> COM : usa EstadoValvula
+ALR ..> COM : usa Notificador
+DIS ..> COM : usa Valvula
 
 note bottom of CTRL
   Regla (ADR-001): sin dependencias cíclicas (C4).
