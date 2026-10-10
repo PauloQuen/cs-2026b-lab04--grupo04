@@ -1,0 +1,37 @@
+@startuml paquetes
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+title ChacraSmart Majes — Paquetes del monolito modular (vista de desarrollo · E5)
+
+package "chacrasmart" {
+  package "lecturas" as LEC
+  package "programacion" as PRO
+  package "control_valvulas" as CTRL
+  package "alertas" as ALR
+  package "dispositivos" as DIS
+  package "compartido" as COM
+}
+
+' Dependencias entre módulos, etiquetadas con la clase/puerto que se usa (E5).
+' pro ..> lecturas proviene del diseño detallado (E1): ServicioRiego usa
+' LecturaHumedad para evaluar el riego automático según la humedad del suelo.
+PRO ..> CTRL : usa ControladorValvula\n(puerto)
+PRO ..> LEC : usa LecturaHumedad
+LEC ..> ALR : usa Notificador\n(puerto)
+CTRL ..> DIS : usa Valvula
+ALR ..> DIS : usa Agricultor
+
+' Compartido: tipos y utilidades de uso común
+LEC ..> COM
+PRO ..> COM
+CTRL ..> COM
+ALR ..> COM
+DIS ..> COM
+
+note bottom of CTRL
+  Regla (ADR-001): sin dependencias cíclicas (C4).
+  Los módulos se comunican SOLO por interfaces públicas (puertos).
+  control_valvulas NO depende de programacion.
+end note
+@enduml
