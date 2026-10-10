@@ -79,6 +79,7 @@ interface Notificador <<puerto>> {
 }
 interface RepositorioRiego <<puerto>> {
   + buscarValvula(id: UUID): Valvula
+  + buscarValvulasPorParcela(parcelaId: UUID): list
   + guardarProgramacion(p: ProgramacionRiego): void
 }
 

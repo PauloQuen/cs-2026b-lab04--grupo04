@@ -26,7 +26,7 @@
 | # | Fecha | Herramienta | Prompt (resumen) | Qué propuso la IA | Qué verificamos o corregimos | Decisión |
 |---|-------|-------------|------------------|-------------------|------------------------------|----------|
 | 1 | 10/10 | Asistente IA (CLI) | **Prompt IA 1** — Diagrama de clases de los módulos Riego y Control de válvulas, adaptando el prompt de la guía al caso 9: contexto del ADR-001, historia y criterios de aceptación | 6+ clases de dominio (`Agricultor`, `Parcela`, `Valvula`, `ProgramacionRiego`, `LecturaHumedad`), 2 enumeraciones, 3 puertos (`ControladorValvula`, `Notificador`, `RepositorioRiego`) y 2 adaptadores | **Coherencia con el ADR-001:** la IA tiende a poner la lógica de infraestructura en la entidad; se corrigió para que la entidad **no dependa del adaptador**: todo pasa por el puerto `ControladorValvula`, mediado por `ServicioRiego`. **QA-01:** la falla segura existe como operación del dominio (`fallarCierreSeguro()`) y `aperturaMaximaMin` limita el temporizador local (ADR-003). **C3:** multiplicidad en ambos extremos de todas las asociaciones (parcela–válvula como composición `1..*`). **C5:** nombres del dominio idénticos a drivers.md/ADR-001. **Nombre del módulo E6:** decidido por el equipo (`src/valvulas_riego`, el guion no es válido en Python) | **Corregida** — la entidad no habla con el adaptador; `ServicioRiego` media por puertos. Resto verificado y aceptado |
-| 2 | 10/10 | *(pendiente E2)* | | | | |
+| 2 | 10/10 | Asistente IA (CLI) | **Prompt IA 2** — Diagrama de secuencia del flujo "programar un riego y abrir la válvula remota", con `alt`, `loop`/`opt` y un mensaje asíncrono | 9 líneas de vida (actor, PWA, controlador, servicio, repositorio, entidades y el puerto hacia el controlador de campo). `alt` para éxito vs válvula fuera de línea, `loop` de reintentos de apertura, `opt` de cierre por temporizador local (ADR-003) y 2 mensajes asíncronos a `Notificador` | **Regla C1:** el mensaje `S -> R : buscarValvulasPorParcela(parcelaId)` no existía como operación de `RepositorioRiego`; se **agregó al diagrama de clases** (procedimiento del E2, paso 5). Se verificaron uno a uno los demás mensajes contra las operaciones de `clases.puml`: `iniciar()`, `finalizar()`, `abrir()`, `confirmarApertura()`, `cerrar()`, `notificarAlerta()` — todos existen | **Corregida** — `buscarValvulasPorParcela()` añadida a `RepositorioRiego`. Resto verificado y aceptado |
 | 3 | 10/10 | *(pendiente E3)* | | | | |
 | 4 | 10/10 | *(pendiente E4)* | | | | |
 | 5 | 10/10 | *(pendiente E5)* | | | | |
@@ -57,6 +57,24 @@ existen para que el diagrama sea **verificable** contra el escenario QA-01 (0 v�
 lo programado en 100 cortes de red simulados). Sin esas operaciones, la máquina de estados de E3 no tendría de
 dónde tomar la transición de Falla (regla C2).
 
+### Fila 2 — la regla C1 se aplica, no se declama (E2)
+
+```mermaid
+(ver docs/design/secuencia-programar-riego.png)
+```
+
+El diagrama de secuencia usa `alt` (éxito vs válvula fuera de línea, CA-03), `loop` (reintentos de apertura) y
+`opt` (cierre por temporizador local al terminar la duración, ADR-003), con 9 líneas de vida y 2 mensajes
+asíncronos a `Notificador`.
+
+**Verificación C1:** se listaron los mensajes dirigidos a objetos que son clases del diagrama y se contrastaron
+con `clases.puml`. Uno falló: `buscarValvulasPorParcela(parcelaId)` no estaba en `RepositorioRiego`. Se agregó
+como operación del puerto (E2, paso 5 de la guía). Los demás (`iniciar`, `finalizar`, `abrir`,
+`confirmarApertura`, `cerrar`, `notificarAlerta`) ya existían.
+
+**Evidencia:** [`secuencia-programar-riego.puml`](secuencia-programar-riego.puml) y la línea `buscarValvulasPorParcela`
+en [`clases.puml`](clases.puml).
+
 ---
 
 ## Anexo: prompts completos
@@ -81,4 +99,25 @@ controlador de campo.
 Formato: solo el código PlantUML. No agregues clases que no se deriven de la
 historia; si asumes algo, indícalo en un comentario. Usa nombres del dominio
 del caso (válvula, parcela, riego), no genéricos.
+```
+
+### Prompt IA 2 — Diagrama de secuencia (E2)
+
+```
+Dibuja en PlantUML el diagrama de secuencia del escenario principal de esta
+historia: "programar un riego y abrir la válvula de forma remota", para un
+monolito modular (ADR-001). Líneas de vida: actor, PWA, controlador,
+ServicioRiego, RepositorioRiego, entidades (ProgramacionRiego, Valvula) y el
+puerto ControladorValvula (controlador de campo).
+
+Requisitos:
+- 5 o más líneas de vida.
+- Un fragmento alt para el caso de éxito (válvula en línea) y el de error
+  (válvula fuera de línea, notificación asíncrona).
+- Un fragmento loop u opt (sugerencia: reintentos de acuse de apertura).
+- Al menos un mensaje asíncrono (->>) y los mensajes de retorno.
+- Cada mensaje dirigido a un objeto debe ser una operación de su clase en
+  clases.puml (regla C1); si inventas uno, márcalo para revisarlo.
+
+Solo el código PlantUML.
 ```

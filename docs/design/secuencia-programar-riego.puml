@@ -1,0 +1,55 @@
+@startuml secuencia-programar-riego
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam sequenceMessageAlign center
+autonumber
+title ChacraSmart Majes — Programar un riego y abrir la válvula de forma remota (E2)
+
+actor Agricultor
+participant "PWA" as UI
+participant "RiegoController" as C
+participant "ServicioRiego" as S
+participant "RepositorioRiego" as R
+participant "ProgramacionRiego" as P
+participant "Valvula" as V
+participant "ControladorValvula\n(ControladorCampoAdapter)" as G
+participant "Notificador" as N
+
+' ---- Acto I: programar el riego (alt: éxito / válvula fuera de línea) ----
+Agricultor -> UI : Programa riego\n(parcela, hora, duración)
+UI -> C : POST /riegos
+C -> S : programarRiego(parcelaId, horaInicio, duracionMin)
+S -> R : buscarValvulasPorParcela(parcelaId)
+R --> S : valvulas
+alt hay al menos una válvula en línea
+  S -> R : guardarProgramacion(p)
+  R --> S : ok
+  S --> C : programación PENDIENTE
+  C --> UI : 201 Created
+else todas fuera de línea (CA-03)
+  S ->> N : notificarAlerta(agricultorId,\n"válvula fuera de línea")
+  note right of N : asíncrono\n(no bloquea la respuesta)
+  S --> C : error 409
+  C --> UI : 409 Dispositivo no responde
+end
+
+' ---- Acto II: apertura automática al llegar la hora programada ----
+note over S : al llegar horaInicio\n(disparador interno del sistema)
+
+S -> P : iniciar()
+S -> V : abrir(duracionMin)
+loop hasta acuse de apertura (máx. 2 reintentos)
+  S -> G : abrir(valvulaId, duracionMin)
+  G --> S : acuse de apertura
+  S -> V : confirmarApertura()
+end
+
+' ---- Acto III: cierre por temporizador local cuando termina la duración ----
+opt fin de la duración (cierre seguro, ADR-003)
+  G --> S : evento de cierre\n(por temporizador local)
+  S -> V : cerrar()
+  S -> P : finalizar()
+  S ->> N : notificarAlerta(agricultorId,\n"riego finalizado")
+end
+UI --> Agricultor : Muestra el estado del riego
+@enduml
