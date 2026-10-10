@@ -1,0 +1,48 @@
+@startuml actividades-riego-automatico
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor #EEF2F8
+skinparam ActivityBorderColor #1A3A5C
+title ChacraSmart Majes — Riego automático según la humedad del suelo (E4)
+
+' Revisión con usuario (E4, paso 3): un compañero actuando como agricultor señaló que
+' el agricultor debe ser notificado TAMBIÉN cuando el riego NO se inicia (válvula fuera
+' de línea), no solo cuando termina. Se agregó la rama de alerta del else.
+
+|Sensor|
+start
+:Lee la humedad del suelo;
+:Envía la lectura al sistema;
+|Sistema|
+:Registra la lectura;
+if (¿Humedad bajo el umbral?) then (sí)
+  :Busca la válvula de la parcela;
+  if (¿Válvula en línea?) then (sí)
+    :Programa el riego y envía la orden\nde apertura al controlador;
+    |Controlador de campo|
+    :Abre la válvula y arranca el temporizador\nlocal (ADR-003);
+    fork
+      |Sistema|
+      :Notifica al agricultor\nque el riego comenzó;
+    fork again
+      |Controlador de campo|
+      :Cierra la válvula al cumplirse la duración,\naunque pierda la red (QA-01);
+    end fork
+    |Sistema|
+    :Registra el evento de cierre;
+    |Agricultor|
+    :Recibe el aviso de riego finalizado;
+    stop
+  else (no)
+    |Sistema|
+    :Registra el rechazo\n(válvula fuera de línea);
+    |Agricultor|
+    :Recibe la alerta de dispositivo\nfuera de línea;
+    stop
+  endif
+else (no)
+  |Sistema|
+  :No programa riego\n(humedad suficiente);
+  stop
+endif
+@enduml

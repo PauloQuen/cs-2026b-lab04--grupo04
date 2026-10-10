@@ -28,7 +28,7 @@
 | 1 | 10/10 | Asistente IA (CLI) | **Prompt IA 1** — Diagrama de clases de los módulos Riego y Control de válvulas, adaptando el prompt de la guía al caso 9: contexto del ADR-001, historia y criterios de aceptación | 6+ clases de dominio (`Agricultor`, `Parcela`, `Valvula`, `ProgramacionRiego`, `LecturaHumedad`), 2 enumeraciones, 3 puertos (`ControladorValvula`, `Notificador`, `RepositorioRiego`) y 2 adaptadores | **Coherencia con el ADR-001:** la IA tiende a poner la lógica de infraestructura en la entidad; se corrigió para que la entidad **no dependa del adaptador**: todo pasa por el puerto `ControladorValvula`, mediado por `ServicioRiego`. **QA-01:** la falla segura existe como operación del dominio (`fallarCierreSeguro()`) y `aperturaMaximaMin` limita el temporizador local (ADR-003). **C3:** multiplicidad en ambos extremos de todas las asociaciones (parcela–válvula como composición `1..*`). **C5:** nombres del dominio idénticos a drivers.md/ADR-001. **Nombre del módulo E6:** decidido por el equipo (`src/valvulas_riego`, el guion no es válido en Python) | **Corregida** — la entidad no habla con el adaptador; `ServicioRiego` media por puertos. Resto verificado y aceptado |
 | 2 | 10/10 | Asistente IA (CLI) | **Prompt IA 2** — Diagrama de secuencia del flujo "programar un riego y abrir la válvula remota", con `alt`, `loop`/`opt` y un mensaje asíncrono | 9 líneas de vida (actor, PWA, controlador, servicio, repositorio, entidades y el puerto hacia el controlador de campo). `alt` para éxito vs válvula fuera de línea, `loop` de reintentos de apertura, `opt` de cierre por temporizador local (ADR-003) y 2 mensajes asíncronos a `Notificador` | **Regla C1:** el mensaje `S -> R : buscarValvulasPorParcela(parcelaId)` no existía como operación de `RepositorioRiego`; se **agregó al diagrama de clases** (procedimiento del E2, paso 5). Se verificaron uno a uno los demás mensajes contra las operaciones de `clases.puml`: `iniciar()`, `finalizar()`, `abrir()`, `confirmarApertura()`, `cerrar()`, `notificarAlerta()` — todos existen | **Corregida** — `buscarValvulasPorParcela()` añadida a `RepositorioRiego`. Resto verificado y aceptado |
 | 3 | 10/10 | Asistente IA (CLI) | **Prompt IA 3** — Máquina de estados de `Valvula` en Mermaid (`stateDiagram-v2`) con los 5 estados de la Tabla 7 y transiciones nombradas con operaciones (C2) | `[*] → CERRADA → ABRIENDO → ABIERTA → CERRANDO → …`, más la transición de **Falla (cierre seguro)** por pérdida de conexión o fallo del actuador; 6 guardas entre corchetes y una nota en `FALLA` | **Regla C2:** la transición `CERRANDO → CERRADA` no tenía operación que la provocara; se agregó **`confirmarCierre()`** a `Valvula` en `clases.puml` (mismo caso que `aceptarPreparacion()` del ejemplo docente). Verificado: los 5 estados coinciden **exactamente** con la enumeración `EstadoValvula` (C5) y ningún estado queda sin salida salvo `FALLA` (final) | **Corregida** — `confirmarCierre()` añadida a `Valvula`. Resto aceptado |
-| 4 | 10/10 | *(pendiente E4)* | | | | |
+| 4 | 10/10 | Asistente IA (CLI) + **revisión con usuario** | **Prompt IA 4** — Diagrama de actividades "riego automático según la humedad del suelo": particiones, decisiones y fork/join | 4 particiones (Sensor, Sistema, Controlador de campo, Agricultor), 2 decisiones (humedad bajo umbral; válvula en línea) y un `fork` que notifica al agricultor en paralelo con el cierre por temporizador local | **Cambio surgido de la revisión con usuario (E4, paso 3):** un compañero actuando como agricultor señaló que de nada sirve avisar "riego finalizado" si el riego **nunca empezó**: se agregó la rama `else` que notifica la alerta de *válvula fuera de línea* (CA-03). También se verificó que el cierre por temporizador local queda **dentro del flujo** (QA-01/ADR-003) | **Corregida** — rama de alerta "fuera de línea" añadida en la revisión con usuario |
 | 5 | 10/10 | *(pendiente E5)* | | | | |
 | 6 | 10/10 | *(pendiente E6)* | | | | |
 | 7 | 10/10 | *(pendiente E7)* | | | | |
@@ -88,6 +88,18 @@ transición de salida es `FALLA`, que es final (requiere técnico, fuera del MVP
 
 **Evidencia:** [`estados-valvula.mmd`](estados-valvula.mmd) y la operación `confirmarCierre()` en
 [`clases.puml`](clases.puml).
+
+### Fila 4 — el usuario del proceso ve lo que el diagrama no decía (E4)
+
+El E4, paso 3 de la guía pide validar el flujo con alguien que conozca el proceso real. La revisión se hizo con
+un compañero que actuó como agricultor de Majes. Su lectura del diagrama: *"si el riego no arranca porque la
+válvula está fuera de línea, ¿a mí quién me avisa? El diagrama solo me avisa al final"*. Era cierto: la primera
+versión solo notificaba el fin del riego. Se agregó la rama `else` que dispara la alerta de dispositivo fuera de
+línea (criterio de aceptación CA-03) y se verificó que el cierre por temporizador local (QA-01) quedara dentro
+del flujo, en paralelo con la notificación.
+
+**Evidencia:** el comentario de revisión al inicio de [`actividades-riego-automatico.puml`](actividades-riego-automatico.puml)
+y la rama `else (no) → Recibe la alerta de dispositivo fuera de línea`.
 
 ---
 
@@ -154,4 +166,21 @@ Requisitos:
   cerrada por el temporizador local del controlador de campo.
 
 Solo el código Mermaid.
+```
+
+### Prompt IA 4 — Diagrama de actividades (E4)
+
+```
+Modela en PlantUML el proceso "riego automático según la humedad del suelo" de
+ChacraSmart Majes (monolito modular, ADR-001). Requisitos:
+- 3 o más particiones (|Partición|): Sensor, Sistema, Controlador de campo y
+  Agricultor.
+- 2 o más decisiones (if/else): ¿humedad bajo el umbral? ¿válvula en línea?
+- Una ejecución paralela con fork / end fork: notificar al agricultor en
+  paralelo con el cierre por temporizador local del controlador (QA-01,
+  ADR-003).
+- El flujo debe cubrir: alerta cuando el riego NO puede iniciarse (CA-03) y
+  aviso cuando termina.
+
+Solo el código PlantUML.
 ```
