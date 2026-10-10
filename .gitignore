@@ -1,1 +1,12 @@
 plantuml.jar
+
+# Lab 05: material de referencia del docente (ejemplo AgroConecta + guía PDF).
+# Los entregables van en docs/design/ y src/ de la raíz, NO dentro de lab5/.
+lab5/
+
+# Entorno virtual local para pylint/pyreverse (E6, round-trip)
+.venv/
+
+# Caché de Python (bytecode)
+__pycache__/
+*.pyc
