@@ -8,6 +8,8 @@ lab5/
 # Los entregables van en docs/architecture/c4/ de la raíz, NO dentro de lab06/.
 lab06/
 
+informes/
+
 # Entorno virtual local para pylint/pyreverse (E6, round-trip)
 .venv/
 
