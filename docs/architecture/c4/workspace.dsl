@@ -73,6 +73,25 @@ workspace "ChacraSmart Majes" "Modelo C4 de la plataforma de riego inteligente d
         chacra.api.programacion -> chacra.db "Guarda las programaciones" "SQL/TCP"
         chacra.api.lecturas -> chacra.db "Guarda las lecturas" "SQL/TCP"
 
+        # ---------------------------------------------------------------- Despliegue (E5)
+        produccion = deploymentEnvironment "Producción" {
+            deploymentNode "Celular del agricultor / PC del técnico" "" "Android · navegador web (gama baja, R-05)" {
+                containerInstance chacra.pwa
+            }
+            deploymentNode "Parcela en Majes" "" "conexión intermitente (R-04)" {
+                deploymentNode "Controlador de campo" "" "embebido, sensor + válvula, temporizador local (ADR-003)" {
+                    softwareSystemInstance controlador
+                }
+            }
+            deploymentNode "VPS en la nube" "" "Ubuntu 24.04 · 2 vCPU · 4 GB RAM (R-03, un solo VPS)" {
+                deploymentNode "Docker Compose" "" "Docker 27" {
+                    containerInstance chacra.api
+                    containerInstance chacra.worker
+                    containerInstance chacra.db
+                    containerInstance chacra.redis
+                }
+            }
+        }
     }
 
     views {
@@ -98,6 +117,10 @@ workspace "ChacraSmart Majes" "Modelo C4 de la plataforma de riego inteligente d
             chacra.api.programacion -> chacra.api.alertas "notificarAlerta(riego iniciado / finalizado)"
             chacra.api.alertas -> chacra.redis "Encola el envío de la alerta"
             chacra.worker -> mensajeria "Envía la alerta por WhatsApp / SMS"
+            autolayout lr
+        }
+        deployment chacra produccion "Despliegue" "Despliegue en producción (MVP, un solo VPS — R-03)." {
+            include *
             autolayout lr
         }
         styles {
