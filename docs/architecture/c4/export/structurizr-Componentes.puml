@@ -1,0 +1,60 @@
+@startuml
+title <size:24>Component View: ChacraSmart Majes - API ChacraSmart</size>\n<size:24>Nivel 3: módulos del monolito modular (ADR-001).</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+!include <C4/C4_Component>
+
+System(Controladordecampo, "Controlador de campo", $descr="Dispositivo en la parcela: lee el sensor, acciona la válvula y la cierra solo al cumplirse el tiempo programado aunque se pierda la conexión (ADR-003).", $tags="", $link="")
+
+System_Boundary("ChacraSmartMajes_boundary", "ChacraSmart Majes", $tags="") {
+  Container_Boundary("ChacraSmartMajes.APIChacraSmart_boundary", "API ChacraSmart", $tags="") {
+    Component(ChacraSmartMajes.APIChacraSmart.MóduloDispositivos, "Módulo Dispositivos", $techn="Django app", $descr="Parcelas, sensores y válvulas y su estado en línea / fuera de línea (RF-06, RF-07).", $tags="", $link="")
+    Component(ChacraSmartMajes.APIChacraSmart.MóduloCompartido, "Módulo Compartido", $techn="Python", $descr="Tipos y utilidades comunes a todos los módulos (etiquetado y reglas del dominio).", $tags="", $link="")
+    Component(ChacraSmartMajes.APIChacraSmart.MóduloLecturas, "Módulo Lecturas", $techn="Django app", $descr="Recibe y consulta lecturas de humedad del suelo (RF-01, RF-02).", $tags="", $link="")
+    Component(ChacraSmartMajes.APIChacraSmart.MóduloProgramación, "Módulo Programación", $techn="Django app", $descr="Crea, ejecuta y finaliza programaciones de riego (RF-03).", $tags="", $link="")
+    Component(ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, "Módulo Control de válvulas", $techn="Django app", $descr="Órdenes de apertura y cierre con duración máxima; aísla el control crítico (RF-04, QA-01).", $tags="", $link="")
+    Component(ChacraSmartMajes.APIChacraSmart.MóduloAlertas, "Módulo Alertas", $techn="Django app", $descr="Genera y encola alertas por falta de agua y por estado del riego (RF-05).", $tags="", $link="")
+  }
+
+  ContainerDb(ChacraSmartMajes.Basededatos, "Base de datos", $techn="PostgreSQL 16", $descr="Lecturas, programaciones, válvulas, parcelas y usuarios; un esquema por módulo.", $tags="", $link="")
+  ContainerQueue(ChacraSmartMajes.Colaycaché, "Cola y caché", $techn="Redis", $descr="Cola de tareas del worker y caché del estado de las válvulas abiertas (QA-01).", $tags="", $link="")
+  Container(ChacraSmartMajes.PWA, "PWA", $techn="HTML / CSS / JavaScript (PWA)", $descr="Interfaz para agricultores y técnicos; ligera para celulares de gama baja y apta para señal intermitente.", $tags="", $link="")
+}
+
+Rel(ChacraSmartMajes.PWA, ChacraSmartMajes.APIChacraSmart.MóduloLecturas, "Consulta la humedad actual e histórica", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(ChacraSmartMajes.PWA, ChacraSmartMajes.APIChacraSmart.MóduloProgramación, "Programa y consulta riegos", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(ChacraSmartMajes.PWA, ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, "Abre y cierra válvulas de forma remota", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(ChacraSmartMajes.PWA, ChacraSmartMajes.APIChacraSmart.MóduloDispositivos, "Registra parcelas y dispositivos", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloProgramación, ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, "Usa el puerto ControladorValvula", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloProgramación, ChacraSmartMajes.APIChacraSmart.MóduloLecturas, "Evalúa la humedad antes de regar", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloProgramación, ChacraSmartMajes.APIChacraSmart.MóduloAlertas, "Pide notificar el estado del riego", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloLecturas, ChacraSmartMajes.APIChacraSmart.MóduloAlertas, "Usa el puerto Notificador (falta de agua)", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, ChacraSmartMajes.APIChacraSmart.MóduloDispositivos, "Usa la entidad Valvula", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloAlertas, ChacraSmartMajes.APIChacraSmart.MóduloDispositivos, "Usa la entidad Agricultor", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloLecturas, ChacraSmartMajes.APIChacraSmart.MóduloCompartido, "Usa tipos comunes (LecturaHumedad)", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloProgramación, ChacraSmartMajes.APIChacraSmart.MóduloCompartido, "Usa tipos comunes (ProgramacionRiego)", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, ChacraSmartMajes.APIChacraSmart.MóduloCompartido, "Usa tipos comunes (EstadoValvula)", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloAlertas, ChacraSmartMajes.APIChacraSmart.MóduloCompartido, "Usa tipos comunes (Notificador)", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloDispositivos, ChacraSmartMajes.APIChacraSmart.MóduloCompartido, "Usa tipos comunes (Valvula)", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, Controladordecampo, "Envía la orden con duración máxima y recibe acuses", $techn="HTTP/JSON (ADR-002)", $tags="", $link="")
+Rel(Controladordecampo, ChacraSmartMajes.APIChacraSmart.MóduloLecturas, "Envía lecturas de humedad", $techn="HTTP/JSON (ADR-002)", $tags="", $link="")
+Rel(Controladordecampo, ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, "Envía acuses y el cierre del temporizador local", $techn="HTTP/JSON (ADR-002)", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloAlertas, ChacraSmartMajes.Colaycaché, "Encola el envío de la alerta", $techn="Redis protocol", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloProgramación, ChacraSmartMajes.Basededatos, "Guarda las programaciones", $techn="SQL/TCP", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloLecturas, ChacraSmartMajes.Basededatos, "Guarda las lecturas", $techn="SQL/TCP", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

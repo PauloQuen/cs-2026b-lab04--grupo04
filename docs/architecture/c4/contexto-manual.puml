@@ -1,0 +1,22 @@
+@startuml contexto-manual
+!include <C4/C4_Context>
+skinparam dpi 180
+LAYOUT_LEFT_RIGHT()
+title Contexto de ChacraSmart Majes (C4-PlantUML escrito a mano)
+
+' Escrito a mano para E6: mismo contenido que export/structurizr-Contexto.puml,
+' que es el que generó Structurizr desde workspace.dsl. Si difieren, miente el manual.
+
+Person(agricultor, "Agricultor", "Consulta la humedad, programa riegos y controla sus válvulas (RF-02 a RF-05)")
+Person(tecnico, "Técnico", "Registra parcelas, sensores y válvulas y consulta su estado (RF-06, RF-07)")
+System(chacra, "ChacraSmart Majes", "Plataforma de riego inteligente: lecturas, programación de riegos y control de válvulas con falla segura local (QA-01)")
+System_Ext(controlador, "Controlador de campo", "Sensor + válvula en la parcela; cierra sola al vencer el tiempo programado (ADR-003)")
+System_Ext(mensajeria, "Servicio de mensajería", "Envía las alertas por WhatsApp / SMS (R-06)")
+
+Rel(agricultor, chacra, "Consulta humedad, programa riegos y controla sus válvulas")
+Rel(tecnico, chacra, "Registra dispositivos y consulta su estado")
+Rel(chacra, controlador, "Envía órdenes de riego y recibe lecturas", "HTTP/JSON (ADR-002)")
+Rel(chacra, mensajeria, "Envía alertas de riego", "HTTPS/JSON")
+Rel(controlador, chacra, "Envía lecturas, acuses y eventos del temporizador local", "HTTP/JSON (ADR-002)")
+SHOW_LEGEND()
+@enduml

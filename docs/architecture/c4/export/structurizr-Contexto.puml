@@ -1,0 +1,31 @@
+@startuml
+title <size:24>System Context View: ChacraSmart Majes</size>\n<size:24>Nivel 1: ChacraSmart Majes y su entorno.</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+
+Person(Agricultor, "Agricultor", $descr="Dueño de la parcela: consulta la humedad, programa riegos, abre y cierra válvulas de forma remota y recibe alertas (RF-02 a RF-05).", $tags="", $link="")
+System(Controladordecampo, "Controlador de campo", $descr="Dispositivo en la parcela: lee el sensor, acciona la válvula y la cierra solo al cumplirse el tiempo programado aunque se pierda la conexión (ADR-003).", $tags="", $link="")
+System(Serviciodemensajería, "Servicio de mensajería", $descr="Envía las alertas por WhatsApp / SMS a los usuarios (R-06).", $tags="", $link="")
+Person(Técnico, "Técnico", $descr="Registra parcelas, sensores y válvulas y consulta si cada dispositivo está en línea o fuera de línea (RF-06, RF-07).", $tags="", $link="")
+System(ChacraSmartMajes, "ChacraSmart Majes", $descr="Plataforma de riego inteligente: recibe lecturas de humedad, permite programar riegos y controla las válvulas con falla segura local (QA-01).", $tags="", $link="")
+
+Rel(Agricultor, ChacraSmartMajes, "Consulta humedad, programa riegos y controla sus válvulas", $techn="", $tags="", $link="")
+Rel(Técnico, ChacraSmartMajes, "Registra dispositivos y consulta su estado", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes, Controladordecampo, "Envía órdenes de riego y recibe lecturas", $techn="HTTP/JSON (ADR-002)", $tags="", $link="")
+Rel(ChacraSmartMajes, Serviciodemensajería, "Envía alertas de riego", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(Controladordecampo, ChacraSmartMajes, "Envía lecturas, acuses y eventos del temporizador local", $techn="HTTP/JSON (ADR-002)", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

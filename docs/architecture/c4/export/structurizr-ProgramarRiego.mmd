@@ -1,0 +1,64 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Dynamic View: ChacraSmart Majes - API ChacraSmart"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    1["<div style='font-weight: bold'>Agricultor</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Dueño de la parcela: consulta<br />la humedad, programa riegos,<br />abre y cierra válvulas de<br />forma remota y recibe alertas<br />(RF-02 a RF-05).</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+
+    15["<div style='font-weight: bold'>Controlador de campo</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Dispositivo en la parcela:<br />lee el sensor, acciona la<br />válvula y la cierra solo al<br />cumplirse el tiempo<br />programado aunque se pierda<br />la conexión (ADR-003).</div>"]
+    style 15 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    16["<div style='font-weight: bold'>Servicio de mensajería</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Envía las alertas por<br />WhatsApp / SMS a los usuarios<br />(R-06).</div>"]
+    style 16 fill:#999999,stroke:#6b6b6b,color:#ffffff
+
+    subgraph 3 ["ChacraSmart Majes"]
+      style 3 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      subgraph 5 ["API ChacraSmart"]
+        style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+        7["<div style='font-weight: bold'>Módulo Programación</div><div style='font-size: 70%; margin-top: 0px'>[Component: Django app]</div><div style='font-size: 80%; margin-top:10px'>Crea, ejecuta y finaliza<br />programaciones de riego<br />(RF-03).</div>"]
+        style 7 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        8["<div style='font-weight: bold'>Módulo Control de válvulas</div><div style='font-size: 70%; margin-top: 0px'>[Component: Django app]</div><div style='font-size: 80%; margin-top:10px'>Órdenes de apertura y cierre<br />con duración máxima; aísla el<br />control crítico (RF-04,<br />QA-01).</div>"]
+        style 8 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        9["<div style='font-weight: bold'>Módulo Alertas</div><div style='font-size: 70%; margin-top: 0px'>[Component: Django app]</div><div style='font-size: 80%; margin-top:10px'>Genera y encola alertas por<br />falta de agua y por estado<br />del riego (RF-05).</div>"]
+        style 9 fill:#85bbf0,stroke:#5d82a8,color:#000000
+      end
+
+      12["<div style='font-weight: bold'>Worker de tareas</div><div style='font-size: 70%; margin-top: 0px'>[Container: Celery]</div><div style='font-size: 80%; margin-top:10px'>Ejecuta de forma asíncrona el<br />envío de alertas y sus<br />reintentos.</div>"]
+      style 12 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      13[("<div style='font-weight: bold'>Base de datos</div><div style='font-size: 70%; margin-top: 0px'>[Container: PostgreSQL 16]</div><div style='font-size: 80%; margin-top:10px'>Lecturas, programaciones,<br />válvulas, parcelas y<br />usuarios; un esquema por<br />módulo.</div>")]
+      style 13 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      14["<div style='font-weight: bold'>Cola y caché</div><div style='font-size: 70%; margin-top: 0px'>[Container: Redis]</div><div style='font-size: 80%; margin-top:10px'>Cola de tareas del worker y<br />caché del estado de las<br />válvulas abiertas (QA-01).</div>"]
+      style 14 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      4["<div style='font-weight: bold'>PWA</div><div style='font-size: 70%; margin-top: 0px'>[Container: HTML / CSS / JavaScript (PWA)]</div><div style='font-size: 80%; margin-top:10px'>Interfaz para agricultores y<br />técnicos; ligera para<br />celulares de gama baja y apta<br />para señal intermitente.</div>"]
+      style 4 fill:#438dd5,stroke:#2e6295,color:#ffffff
+    end
+
+    1["<div style='font-weight: bold'>Agricultor</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Dueño de la parcela: consulta<br />la humedad, programa riegos,<br />abre y cierra válvulas de<br />forma remota y recibe alertas<br />(RF-02 a RF-05).</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+    4["<div style='font-weight: bold'>PWA</div><div style='font-size: 70%; margin-top: 0px'>[Container: HTML / CSS / JavaScript (PWA)]</div><div style='font-size: 80%; margin-top:10px'>Interfaz para agricultores y<br />técnicos; ligera para<br />celulares de gama baja y apta<br />para señal intermitente.</div>"]
+    style 4 fill:#438dd5,stroke:#2e6295,color:#ffffff
+    12["<div style='font-weight: bold'>Worker de tareas</div><div style='font-size: 70%; margin-top: 0px'>[Container: Celery]</div><div style='font-size: 80%; margin-top:10px'>Ejecuta de forma asíncrona el<br />envío de alertas y sus<br />reintentos.</div>"]
+    style 12 fill:#438dd5,stroke:#2e6295,color:#ffffff
+    13[("<div style='font-weight: bold'>Base de datos</div><div style='font-size: 70%; margin-top: 0px'>[Container: PostgreSQL 16]</div><div style='font-size: 80%; margin-top:10px'>Lecturas, programaciones,<br />válvulas, parcelas y<br />usuarios; un esquema por<br />módulo.</div>")]
+    style 13 fill:#438dd5,stroke:#2e6295,color:#ffffff
+    14["<div style='font-weight: bold'>Cola y caché</div><div style='font-size: 70%; margin-top: 0px'>[Container: Redis]</div><div style='font-size: 80%; margin-top:10px'>Cola de tareas del worker y<br />caché del estado de las<br />válvulas abiertas (QA-01).</div>"]
+    style 14 fill:#438dd5,stroke:#2e6295,color:#ffffff
+    15["<div style='font-weight: bold'>Controlador de campo</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Dispositivo en la parcela:<br />lee el sensor, acciona la<br />válvula y la cierra solo al<br />cumplirse el tiempo<br />programado aunque se pierda<br />la conexión (ADR-003).</div>"]
+    style 15 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    16["<div style='font-weight: bold'>Servicio de mensajería</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Envía las alertas por<br />WhatsApp / SMS a los usuarios<br />(R-06).</div>"]
+    style 16 fill:#999999,stroke:#6b6b6b,color:#ffffff
+
+    1-. "<div>1. Programa un riego<br />(parcela, hora y duración)</div><div style='font-size: 70%'>[HTTPS]</div>" .->4
+    4-. "<div>2. POST /riegos</div><div style='font-size: 70%'>[HTTPS/JSON]</div>" .->7
+    7-. "<div>3. guardarProgramacion(p) —<br />estado PENDIENTE</div><div style='font-size: 70%'>[SQL/TCP]</div>" .->13
+    7-. "<div>4. abrir(valvulaId,<br />duracionMin) por el puerto<br />ControladorValvula</div><div style='font-size: 70%'></div>" .->8
+    8-. "<div>5. Orden de apertura con<br />duración máxima (ADR-003)</div><div style='font-size: 70%'>[HTTP/JSON (ADR-002)]</div>" .->15
+    15-. "<div>6. Acuse de apertura; al<br />vencer, cierre por<br />temporizador local</div><div style='font-size: 70%'>[HTTP/JSON (ADR-002)]</div>" .->8
+    7-. "<div>7. notificarAlerta(riego<br />iniciado / finalizado)</div><div style='font-size: 70%'></div>" .->9
+    9-. "<div>8. Encola el envío de la<br />alerta</div><div style='font-size: 70%'>[Redis protocol]</div>" .->14
+    12-. "<div>9. Envía la alerta por<br />WhatsApp / SMS</div><div style='font-size: 70%'>[HTTPS/JSON]</div>" .->16
+
+  end

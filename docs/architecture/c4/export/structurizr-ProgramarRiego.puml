@@ -1,0 +1,57 @@
+@startuml
+title <size:24>Dynamic View: ChacraSmart Majes - API ChacraSmart</size>\n<size:24>Dinámico: programar un riego y abrir la válvula de forma remota (flujo crítico del Lab 05).</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+!include <C4/C4_Component>
+
+Person(Agricultor, "Agricultor", $descr="Dueño de la parcela: consulta la humedad, programa riegos, abre y cierra válvulas de forma remota y recibe alertas (RF-02 a RF-05).", $tags="", $link="")
+
+System(Controladordecampo, "Controlador de campo", $descr="Dispositivo en la parcela: lee el sensor, acciona la válvula y la cierra solo al cumplirse el tiempo programado aunque se pierda la conexión (ADR-003).", $tags="", $link="")
+System(Serviciodemensajería, "Servicio de mensajería", $descr="Envía las alertas por WhatsApp / SMS a los usuarios (R-06).", $tags="", $link="")
+
+System_Boundary("ChacraSmartMajes_boundary", "ChacraSmart Majes", $tags="") {
+  Container_Boundary("ChacraSmartMajes.APIChacraSmart_boundary", "API ChacraSmart", $tags="") {
+    Component(ChacraSmartMajes.APIChacraSmart.MóduloProgramación, "Módulo Programación", $techn="Django app", $descr="Crea, ejecuta y finaliza programaciones de riego (RF-03).", $tags="", $link="")
+    Component(ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, "Módulo Control de válvulas", $techn="Django app", $descr="Órdenes de apertura y cierre con duración máxima; aísla el control crítico (RF-04, QA-01).", $tags="", $link="")
+    Component(ChacraSmartMajes.APIChacraSmart.MóduloAlertas, "Módulo Alertas", $techn="Django app", $descr="Genera y encola alertas por falta de agua y por estado del riego (RF-05).", $tags="", $link="")
+  }
+
+  Container(ChacraSmartMajes.Workerdetareas, "Worker de tareas", $techn="Celery", $descr="Ejecuta de forma asíncrona el envío de alertas y sus reintentos.", $tags="", $link="")
+  ContainerDb(ChacraSmartMajes.Basededatos, "Base de datos", $techn="PostgreSQL 16", $descr="Lecturas, programaciones, válvulas, parcelas y usuarios; un esquema por módulo.", $tags="", $link="")
+  ContainerQueue(ChacraSmartMajes.Colaycaché, "Cola y caché", $techn="Redis", $descr="Cola de tareas del worker y caché del estado de las válvulas abiertas (QA-01).", $tags="", $link="")
+  Container(ChacraSmartMajes.PWA, "PWA", $techn="HTML / CSS / JavaScript (PWA)", $descr="Interfaz para agricultores y técnicos; ligera para celulares de gama baja y apta para señal intermitente.", $tags="", $link="")
+}
+
+Person(Agricultor, "Agricultor", $descr="Dueño de la parcela: consulta la humedad, programa riegos, abre y cierra válvulas de forma remota y recibe alertas (RF-02 a RF-05).", $tags="", $link="")
+Container(ChacraSmartMajes.PWA, "PWA", $techn="HTML / CSS / JavaScript (PWA)", $descr="Interfaz para agricultores y técnicos; ligera para celulares de gama baja y apta para señal intermitente.", $tags="", $link="")
+Container(ChacraSmartMajes.Workerdetareas, "Worker de tareas", $techn="Celery", $descr="Ejecuta de forma asíncrona el envío de alertas y sus reintentos.", $tags="", $link="")
+ContainerDb(ChacraSmartMajes.Basededatos, "Base de datos", $techn="PostgreSQL 16", $descr="Lecturas, programaciones, válvulas, parcelas y usuarios; un esquema por módulo.", $tags="", $link="")
+ContainerQueue(ChacraSmartMajes.Colaycaché, "Cola y caché", $techn="Redis", $descr="Cola de tareas del worker y caché del estado de las válvulas abiertas (QA-01).", $tags="", $link="")
+System(Controladordecampo, "Controlador de campo", $descr="Dispositivo en la parcela: lee el sensor, acciona la válvula y la cierra solo al cumplirse el tiempo programado aunque se pierda la conexión (ADR-003).", $tags="", $link="")
+System(Serviciodemensajería, "Servicio de mensajería", $descr="Envía las alertas por WhatsApp / SMS a los usuarios (R-06).", $tags="", $link="")
+
+Rel(Agricultor, ChacraSmartMajes.PWA, "1: Programa un riego (parcela, hora y duración)", $techn="HTTPS", $tags="", $link="")
+Rel(ChacraSmartMajes.PWA, ChacraSmartMajes.APIChacraSmart.MóduloProgramación, "2: POST /riegos", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloProgramación, ChacraSmartMajes.Basededatos, "3: guardarProgramacion(p) — estado PENDIENTE", $techn="SQL/TCP", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloProgramación, ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, "4: abrir(valvulaId, duracionMin) por el puerto ControladorValvula", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, Controladordecampo, "5: Orden de apertura con duración máxima (ADR-003)", $techn="HTTP/JSON (ADR-002)", $tags="", $link="")
+Rel(Controladordecampo, ChacraSmartMajes.APIChacraSmart.MóduloControldeválvulas, "6: Acuse de apertura; al vencer, cierre por temporizador local", $techn="HTTP/JSON (ADR-002)", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloProgramación, ChacraSmartMajes.APIChacraSmart.MóduloAlertas, "7: notificarAlerta(riego iniciado / finalizado)", $techn="", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart.MóduloAlertas, ChacraSmartMajes.Colaycaché, "8: Encola el envío de la alerta", $techn="Redis protocol", $tags="", $link="")
+Rel(ChacraSmartMajes.Workerdetareas, Serviciodemensajería, "9: Envía la alerta por WhatsApp / SMS", $techn="HTTPS/JSON", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml

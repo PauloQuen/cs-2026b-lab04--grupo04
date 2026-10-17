@@ -1,0 +1,60 @@
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["Component View: ChacraSmart Majes - API ChacraSmart"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    15["<div style='font-weight: bold'>Controlador de campo</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Dispositivo en la parcela:<br />lee el sensor, acciona la<br />válvula y la cierra solo al<br />cumplirse el tiempo<br />programado aunque se pierda<br />la conexión (ADR-003).</div>"]
+    style 15 fill:#999999,stroke:#6b6b6b,color:#ffffff
+
+    subgraph 3 ["ChacraSmart Majes"]
+      style 3 fill:#ffffff,stroke:#0b4884,color:#0b4884
+
+      subgraph 5 ["API ChacraSmart"]
+        style 5 fill:#ffffff,stroke:#2e6295,color:#2e6295
+
+        10["<div style='font-weight: bold'>Módulo Dispositivos</div><div style='font-size: 70%; margin-top: 0px'>[Component: Django app]</div><div style='font-size: 80%; margin-top:10px'>Parcelas, sensores y válvulas<br />y su estado en línea / fuera<br />de línea (RF-06, RF-07).</div>"]
+        style 10 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        11["<div style='font-weight: bold'>Módulo Compartido</div><div style='font-size: 70%; margin-top: 0px'>[Component: Python]</div><div style='font-size: 80%; margin-top:10px'>Tipos y utilidades comunes a<br />todos los módulos (etiquetado<br />y reglas del dominio).</div>"]
+        style 11 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        6["<div style='font-weight: bold'>Módulo Lecturas</div><div style='font-size: 70%; margin-top: 0px'>[Component: Django app]</div><div style='font-size: 80%; margin-top:10px'>Recibe y consulta lecturas de<br />humedad del suelo (RF-01,<br />RF-02).</div>"]
+        style 6 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        7["<div style='font-weight: bold'>Módulo Programación</div><div style='font-size: 70%; margin-top: 0px'>[Component: Django app]</div><div style='font-size: 80%; margin-top:10px'>Crea, ejecuta y finaliza<br />programaciones de riego<br />(RF-03).</div>"]
+        style 7 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        8["<div style='font-weight: bold'>Módulo Control de válvulas</div><div style='font-size: 70%; margin-top: 0px'>[Component: Django app]</div><div style='font-size: 80%; margin-top:10px'>Órdenes de apertura y cierre<br />con duración máxima; aísla el<br />control crítico (RF-04,<br />QA-01).</div>"]
+        style 8 fill:#85bbf0,stroke:#5d82a8,color:#000000
+        9["<div style='font-weight: bold'>Módulo Alertas</div><div style='font-size: 70%; margin-top: 0px'>[Component: Django app]</div><div style='font-size: 80%; margin-top:10px'>Genera y encola alertas por<br />falta de agua y por estado<br />del riego (RF-05).</div>"]
+        style 9 fill:#85bbf0,stroke:#5d82a8,color:#000000
+      end
+
+      13[("<div style='font-weight: bold'>Base de datos</div><div style='font-size: 70%; margin-top: 0px'>[Container: PostgreSQL 16]</div><div style='font-size: 80%; margin-top:10px'>Lecturas, programaciones,<br />válvulas, parcelas y<br />usuarios; un esquema por<br />módulo.</div>")]
+      style 13 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      14["<div style='font-weight: bold'>Cola y caché</div><div style='font-size: 70%; margin-top: 0px'>[Container: Redis]</div><div style='font-size: 80%; margin-top:10px'>Cola de tareas del worker y<br />caché del estado de las<br />válvulas abiertas (QA-01).</div>"]
+      style 14 fill:#438dd5,stroke:#2e6295,color:#ffffff
+      4["<div style='font-weight: bold'>PWA</div><div style='font-size: 70%; margin-top: 0px'>[Container: HTML / CSS / JavaScript (PWA)]</div><div style='font-size: 80%; margin-top:10px'>Interfaz para agricultores y<br />técnicos; ligera para<br />celulares de gama baja y apta<br />para señal intermitente.</div>"]
+      style 4 fill:#438dd5,stroke:#2e6295,color:#ffffff
+    end
+
+    4-. "<div>Consulta la humedad actual e<br />histórica</div><div style='font-size: 70%'>[HTTPS/JSON]</div>" .->6
+    4-. "<div>Programa y consulta riegos</div><div style='font-size: 70%'>[HTTPS/JSON]</div>" .->7
+    4-. "<div>Abre y cierra válvulas de<br />forma remota</div><div style='font-size: 70%'>[HTTPS/JSON]</div>" .->8
+    4-. "<div>Registra parcelas y<br />dispositivos</div><div style='font-size: 70%'>[HTTPS/JSON]</div>" .->10
+    7-. "<div>Usa el puerto<br />ControladorValvula</div><div style='font-size: 70%'></div>" .->8
+    7-. "<div>Evalúa la humedad antes de<br />regar</div><div style='font-size: 70%'></div>" .->6
+    7-. "<div>Pide notificar el estado del<br />riego</div><div style='font-size: 70%'></div>" .->9
+    6-. "<div>Usa el puerto Notificador<br />(falta de agua)</div><div style='font-size: 70%'></div>" .->9
+    8-. "<div>Usa la entidad Valvula</div><div style='font-size: 70%'></div>" .->10
+    9-. "<div>Usa la entidad Agricultor</div><div style='font-size: 70%'></div>" .->10
+    6-. "<div>Usa tipos comunes<br />(LecturaHumedad)</div><div style='font-size: 70%'></div>" .->11
+    7-. "<div>Usa tipos comunes<br />(ProgramacionRiego)</div><div style='font-size: 70%'></div>" .->11
+    8-. "<div>Usa tipos comunes<br />(EstadoValvula)</div><div style='font-size: 70%'></div>" .->11
+    9-. "<div>Usa tipos comunes<br />(Notificador)</div><div style='font-size: 70%'></div>" .->11
+    10-. "<div>Usa tipos comunes (Valvula)</div><div style='font-size: 70%'></div>" .->11
+    8-. "<div>Envía la orden con duración<br />máxima y recibe acuses</div><div style='font-size: 70%'>[HTTP/JSON (ADR-002)]</div>" .->15
+    15-. "<div>Envía lecturas de humedad</div><div style='font-size: 70%'>[HTTP/JSON (ADR-002)]</div>" .->6
+    15-. "<div>Envía acuses y el cierre del<br />temporizador local</div><div style='font-size: 70%'>[HTTP/JSON (ADR-002)]</div>" .->8
+    9-. "<div>Encola el envío de la alerta</div><div style='font-size: 70%'>[Redis protocol]</div>" .->14
+    7-. "<div>Guarda las programaciones</div><div style='font-size: 70%'>[SQL/TCP]</div>" .->13
+    6-. "<div>Guarda las lecturas</div><div style='font-size: 70%'>[SQL/TCP]</div>" .->13
+
+  end

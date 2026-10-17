@@ -1,0 +1,43 @@
+@startuml
+title <size:24>Container View: ChacraSmart Majes</size>\n<size:24>Nivel 2: contenedores de ChacraSmart Majes.</size>
+
+set separator none
+left to right direction
+
+<style>
+  root {
+    BackgroundColor: #ffffff
+    FontColor: #444444
+  }
+</style>
+
+!include <C4/C4>
+!include <C4/C4_Context>
+!include <C4/C4_Container>
+
+Person(Agricultor, "Agricultor", $descr="Dueño de la parcela: consulta la humedad, programa riegos, abre y cierra válvulas de forma remota y recibe alertas (RF-02 a RF-05).", $tags="", $link="")
+Person(Técnico, "Técnico", $descr="Registra parcelas, sensores y válvulas y consulta si cada dispositivo está en línea o fuera de línea (RF-06, RF-07).", $tags="", $link="")
+System(Controladordecampo, "Controlador de campo", $descr="Dispositivo en la parcela: lee el sensor, acciona la válvula y la cierra solo al cumplirse el tiempo programado aunque se pierda la conexión (ADR-003).", $tags="", $link="")
+System(Serviciodemensajería, "Servicio de mensajería", $descr="Envía las alertas por WhatsApp / SMS a los usuarios (R-06).", $tags="", $link="")
+
+System_Boundary("ChacraSmartMajes_boundary", "ChacraSmart Majes", $tags="") {
+  Container(ChacraSmartMajes.Workerdetareas, "Worker de tareas", $techn="Celery", $descr="Ejecuta de forma asíncrona el envío de alertas y sus reintentos.", $tags="", $link="")
+  ContainerDb(ChacraSmartMajes.Basededatos, "Base de datos", $techn="PostgreSQL 16", $descr="Lecturas, programaciones, válvulas, parcelas y usuarios; un esquema por módulo.", $tags="", $link="")
+  ContainerQueue(ChacraSmartMajes.Colaycaché, "Cola y caché", $techn="Redis", $descr="Cola de tareas del worker y caché del estado de las válvulas abiertas (QA-01).", $tags="", $link="")
+  Container(ChacraSmartMajes.PWA, "PWA", $techn="HTML / CSS / JavaScript (PWA)", $descr="Interfaz para agricultores y técnicos; ligera para celulares de gama baja y apta para señal intermitente.", $tags="", $link="")
+  Container(ChacraSmartMajes.APIChacraSmart, "API ChacraSmart", $techn="Python / Django + gunicorn", $descr="Monolito modular: los casos de uso viven en cinco módulos de dominio que se comunican solo por interfaces públicas (ADR-001).", $tags="", $link="")
+}
+
+Rel(Agricultor, ChacraSmartMajes.PWA, "Usa la PWA en su celular", $techn="HTTPS", $tags="", $link="")
+Rel(Técnico, ChacraSmartMajes.PWA, "Usa la PWA para registrar dispositivos", $techn="HTTPS", $tags="", $link="")
+Rel(ChacraSmartMajes.PWA, ChacraSmartMajes.APIChacraSmart, "Llama a la API", $techn="HTTPS/JSON (REST)", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart, ChacraSmartMajes.Basededatos, "Lee y escribe", $techn="SQL/TCP", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart, ChacraSmartMajes.Colaycaché, "Encola alertas y cachea el estado de las válvulas", $techn="Redis protocol", $tags="", $link="")
+Rel(ChacraSmartMajes.Workerdetareas, ChacraSmartMajes.Colaycaché, "Consume las tareas encoladas", $techn="Redis protocol", $tags="", $link="")
+Rel(ChacraSmartMajes.Workerdetareas, Serviciodemensajería, "Envía las alertas por WhatsApp / SMS", $techn="HTTPS/JSON", $tags="", $link="")
+Rel(ChacraSmartMajes.APIChacraSmart, Controladordecampo, "Envía órdenes de apertura y cierre", $techn="HTTP/JSON (ADR-002)", $tags="", $link="")
+Rel(Controladordecampo, ChacraSmartMajes.APIChacraSmart, "Envía lecturas, acuses y eventos del temporizador local", $techn="HTTP/JSON (ADR-002)", $tags="", $link="")
+
+SHOW_LEGEND(true)
+hide stereotypes
+@enduml
