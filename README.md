@@ -220,6 +220,76 @@ secuencia y toda transición de estados exista como operación en `clases.puml` 
 
 ---
 
+## Arquitectura C4 (Lab 06)
+
+Tercer laboratorio del repositorio: el modelo **C4** del caso completo escrito **como código** en un único
+[`workspace.dsl`](docs/architecture/c4/workspace.dsl) con Structurizr DSL — las cinco vistas (contexto,
+contenedores, componentes, dinámica y despliegue) se derivan de un solo modelo y se validan con un único
+comando. Qué elemento trae y de dónde viene: [`inventario.md`](docs/architecture/c4/inventario.md).
+
+Vista de contexto (Nivel 1), copiada de
+[`export/structurizr-Contexto.mmd`](docs/architecture/c4/export/structurizr-Contexto.mmd):
+
+```mermaid
+graph LR
+  linkStyle default fill:#ffffff
+
+  subgraph diagram ["System Context View: ChacraSmart Majes"]
+    style diagram fill:#ffffff,stroke:#ffffff
+
+    1["<div style='font-weight: bold'>Agricultor</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Dueño de la parcela: consulta<br />la humedad, programa riegos,<br />abre y cierra válvulas de<br />forma remota y recibe alertas<br />(RF-02 a RF-05).</div>"]
+    style 1 fill:#08427b,stroke:#052e56,color:#ffffff
+    15["<div style='font-weight: bold'>Controlador de campo</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Dispositivo en la parcela:<br />lee el sensor, acciona la<br />válvula y la cierra solo al<br />cumplirse el tiempo<br />programado aunque se pierda<br />la conexión (ADR-003).</div>"]
+    style 15 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    16["<div style='font-weight: bold'>Servicio de mensajería</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Envía las alertas por<br />WhatsApp / SMS a los usuarios<br />(R-06).</div>"]
+    style 16 fill:#999999,stroke:#6b6b6b,color:#ffffff
+    2["<div style='font-weight: bold'>Técnico</div><div style='font-size: 70%; margin-top: 0px'>[Person]</div><div style='font-size: 80%; margin-top:10px'>Registra parcelas, sensores y<br />válvulas y consulta si cada<br />dispositivo está en línea o<br />fuera de línea (RF-06,<br />RF-07).</div>"]
+    style 2 fill:#08427b,stroke:#052e56,color:#ffffff
+    3["<div style='font-weight: bold'>ChacraSmart Majes</div><div style='font-size: 70%; margin-top: 0px'>[Software System]</div><div style='font-size: 80%; margin-top:10px'>Plataforma de riego<br />inteligente: recibe lecturas<br />de humedad, permite programar<br />riegos y controla las<br />válvulas con falla segura<br />local (QA-01).</div>"]
+    style 3 fill:#1168bd,stroke:#0b4884,color:#ffffff
+
+    1-. "<div>Consulta humedad, programa<br />riegos y controla sus<br />válvulas</div><div style='font-size: 70%'></div>" .->3
+    2-. "<div>Registra dispositivos y<br />consulta su estado</div><div style='font-size: 70%'></div>" .->3
+    3-. "<div>Envía órdenes de riego y<br />recibe lecturas</div><div style='font-size: 70%'>[HTTP/JSON (ADR-002)]</div>" .->15
+    3-. "<div>Envía alertas de riego</div><div style='font-size: 70%'>[HTTPS/JSON]</div>" .->16
+    15-. "<div>Envía lecturas, acuses y<br />eventos del temporizador<br />local</div><div style='font-size: 70%'>[HTTP/JSON (ADR-002)]</div>" .->3
+
+  end
+```
+
+**Las cinco vistas** (PNG renderizados con PlantUML desde los `.puml` exportados):
+
+| Vista | Imagen | Export |
+|---|---|---|
+| Contexto (Nivel 1) | ![Vista de contexto C4](docs/architecture/c4/img/structurizr-Contexto.png) | [puml](docs/architecture/c4/export/structurizr-Contexto.puml) · [mmd](docs/architecture/c4/export/structurizr-Contexto.mmd) |
+| Contenedores (Nivel 2) | ![Vista de contenedores C4](docs/architecture/c4/img/structurizr-Contenedores.png) | [puml](docs/architecture/c4/export/structurizr-Contenedores.puml) · [mmd](docs/architecture/c4/export/structurizr-Contenedores.mmd) |
+| Componentes (Nivel 3 — API) | ![Vista de componentes C4](docs/architecture/c4/img/structurizr-Componentes.png) | [puml](docs/architecture/c4/export/structurizr-Componentes.puml) · [mmd](docs/architecture/c4/export/structurizr-Componentes.mmd) |
+| Dinámica "ProgramarRiego" (flujo crítico del Lab 05) | ![Vista dinámica ProgramarRiego](docs/architecture/c4/img/structurizr-ProgramarRiego.png) | [puml](docs/architecture/c4/export/structurizr-ProgramarRiego.puml) · [mmd](docs/architecture/c4/export/structurizr-ProgramarRiego.mmd) |
+| Despliegue (Producción) | ![Vista de despliegue C4](docs/architecture/c4/img/structurizr-Despliegue.png) | [puml](docs/architecture/c4/export/structurizr-Despliegue.puml) · [mmd](docs/architecture/c4/export/structurizr-Despliegue.mmd) |
+
+**Acrónimos usados en las descripciones**: `RF-xx` = requisitos funcionales, `QA-xx` = atributos de calidad,
+`R-xx` = restricciones y `ADR-xxx` = decisiones de arquitectura (fuentes:
+[`drivers.md`](docs/architecture/drivers.md) y los [ADR](#decisiones-arquitectónicas)).
+
+Revisión y comunicación del Lab 06:
+[`comparacion.md`](docs/architecture/c4/comparacion.md) (secuencia UML vs dinámica C4 y experimento de
+renombrado) · [`revision-c4.md`](docs/architecture/c4/revision-c4.md) (lista oficial de c4model.com + 8 hallazgos
+del segundo revisor IA, con 3 falsos positivos) · [`explicacion.md`](docs/architecture/c4/explicacion.md)
+(explicación no técnica, 109 palabras) · [`bitacora-ia.md`](docs/architecture/c4/bitacora-ia.md) (6 interacciones
+con evidencia).
+
+```bash
+# Validar el modelo (1,6 s medido; 0 errores)
+structurizr.sh validate -w docs/architecture/c4/workspace.dsl
+# Exportar las cinco vistas en PlantUML (C4) y Mermaid
+structurizr.sh export -w docs/architecture/c4/workspace.dsl -f plantuml/c4plantuml -o docs/architecture/c4/export
+structurizr.sh export -w docs/architecture/c4/workspace.dsl -f mermaid -o docs/architecture/c4/export
+# Renderizar los PNG (PlantUML + librería C4; la primera ejecución necesita red por el !include)
+java -jar plantuml.jar -tpng -o ../img docs/architecture/c4/export/*.puml
+```
+
+---
+
 ## Decisiones arquitectónicas
 
 - [**ADR-001 — Estilo arquitectónico: monolito modular**](docs/architecture/adr/001-estilo-arquitectonico.md)
