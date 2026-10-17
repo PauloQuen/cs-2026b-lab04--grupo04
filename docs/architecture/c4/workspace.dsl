@@ -88,6 +88,18 @@ workspace "ChacraSmart Majes" "Modelo C4 de la plataforma de riego inteligente d
             include *
             autolayout lr
         }
+        dynamic chacra.api "ProgramarRiego" "Dinámico: programar un riego y abrir la válvula de forma remota (flujo crítico del Lab 05)." {
+            agricultor -> chacra.pwa "Programa un riego (parcela, hora y duración)"
+            chacra.pwa -> chacra.api.programacion "POST /riegos"
+            chacra.api.programacion -> chacra.db "guardarProgramacion(p) — estado PENDIENTE"
+            chacra.api.programacion -> chacra.api.control_valvulas "abrir(valvulaId, duracionMin) por el puerto ControladorValvula"
+            chacra.api.control_valvulas -> controlador "Orden de apertura con duración máxima (ADR-003)"
+            controlador -> chacra.api.control_valvulas "Acuse de apertura; al vencer, cierre por temporizador local"
+            chacra.api.programacion -> chacra.api.alertas "notificarAlerta(riego iniciado / finalizado)"
+            chacra.api.alertas -> chacra.redis "Encola el envío de la alerta"
+            chacra.worker -> mensajeria "Envía la alerta por WhatsApp / SMS"
+            autolayout lr
+        }
         styles {
             element "Person" {
                 shape person
