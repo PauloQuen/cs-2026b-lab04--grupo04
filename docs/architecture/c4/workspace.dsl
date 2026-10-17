@@ -8,7 +8,14 @@ workspace "ChacraSmart Majes" "Modelo C4 de la plataforma de riego inteligente d
 
         chacra = softwareSystem "ChacraSmart Majes" "Plataforma de riego inteligente: recibe lecturas de humedad, permite programar riegos y controla las válvulas con falla segura local (QA-01)." {
             pwa = container "PWA" "Interfaz para agricultores y técnicos; ligera para celulares de gama baja y apta para señal intermitente." "HTML / CSS / JavaScript (PWA)" "Web Browser"
-            api = container "API ChacraSmart" "Monolito modular: los casos de uso viven en cinco módulos de dominio que se comunican solo por interfaces públicas (ADR-001)." "Python / Django + gunicorn"
+            api = container "API ChacraSmart" "Monolito modular: los casos de uso viven en cinco módulos de dominio que se comunican solo por interfaces públicas (ADR-001)." "Python / Django + gunicorn" {
+                lecturas = component "Módulo Lecturas" "Recibe y consulta lecturas de humedad del suelo (RF-01, RF-02)." "Django app"
+                programacion = component "Módulo Programación" "Crea, ejecuta y finaliza programaciones de riego (RF-03)." "Django app"
+                control_valvulas = component "Módulo Control de válvulas" "Órdenes de apertura y cierre con duración máxima; aísla el control crítico (RF-04, QA-01)." "Django app"
+                alertas = component "Módulo Alertas" "Genera y encola alertas por falta de agua y por estado del riego (RF-05)." "Django app"
+                dispositivos = component "Módulo Dispositivos" "Parcelas, sensores y válvulas y su estado en línea / fuera de línea (RF-06, RF-07)." "Django app"
+                compartido = component "Módulo Compartido" "Tipos y utilidades comunes a todos los módulos (etiquetado y reglas del dominio)." "Python"
+            }
             worker = container "Worker de tareas" "Ejecuta de forma asíncrona el envío de alertas y sus reintentos." "Celery"
             db = container "Base de datos" "Lecturas, programaciones, válvulas, parcelas y usuarios; un esquema por módulo." "PostgreSQL 16" "Database"
             redis = container "Cola y caché" "Cola de tareas del worker y caché del estado de las válvulas abiertas (QA-01)." "Redis" "Queue"
@@ -34,6 +41,38 @@ workspace "ChacraSmart Majes" "Modelo C4 de la plataforma de riego inteligente d
         chacra.api -> controlador "Envía órdenes de apertura y cierre" "HTTP/JSON (ADR-002)"
         controlador -> chacra.api "Envía lecturas, acuses y eventos del temporizador local" "HTTP/JSON (ADR-002)"
 
+        # ---------------------------------------------------------------- Nivel 3: componentes
+        # Superficie REST de la PWA por módulo (cada módulo expone sus propios recursos).
+        chacra.pwa -> chacra.api.lecturas "Consulta la humedad actual e histórica" "HTTPS/JSON"
+        chacra.pwa -> chacra.api.programacion "Programa y consulta riegos" "HTTPS/JSON"
+        chacra.pwa -> chacra.api.control_valvulas "Abre y cierra válvulas de forma remota" "HTTPS/JSON"
+        chacra.pwa -> chacra.api.dispositivos "Registra parcelas y dispositivos" "HTTPS/JSON"
+
+        # Dependencias entre módulos: idénticas a paquetes.puml (Lab 05), más
+        # programacion -> alertas que exige la secuencia (ServicioRiego -> Notificador).
+        chacra.api.programacion -> chacra.api.control_valvulas "Usa el puerto ControladorValvula"
+        chacra.api.programacion -> chacra.api.lecturas "Evalúa la humedad antes de regar"
+        chacra.api.programacion -> chacra.api.alertas "Pide notificar el estado del riego"
+        chacra.api.lecturas -> chacra.api.alertas "Usa el puerto Notificador (falta de agua)"
+        chacra.api.control_valvulas -> chacra.api.dispositivos "Usa la entidad Valvula"
+        chacra.api.alertas -> chacra.api.dispositivos "Usa la entidad Agricultor"
+
+        chacra.api.lecturas -> chacra.api.compartido "Usa tipos comunes (LecturaHumedad)"
+        chacra.api.programacion -> chacra.api.compartido "Usa tipos comunes (ProgramacionRiego)"
+        chacra.api.control_valvulas -> chacra.api.compartido "Usa tipos comunes (EstadoValvula)"
+        chacra.api.alertas -> chacra.api.compartido "Usa tipos comunes (Notificador)"
+        chacra.api.dispositivos -> chacra.api.compartido "Usa tipos comunes (Valvula)"
+
+        # Integraciones externas vistas desde los módulos (adaptadores del ADR-001).
+        chacra.api.control_valvulas -> controlador "Envía la orden con duración máxima y recibe acuses" "HTTP/JSON (ADR-002)"
+        controlador -> chacra.api.lecturas "Envía lecturas de humedad" "HTTP/JSON (ADR-002)"
+        controlador -> chacra.api.control_valvulas "Envía acuses y el cierre del temporizador local" "HTTP/JSON (ADR-002)"
+        chacra.api.alertas -> chacra.redis "Encola el envío de la alerta" "Redis protocol"
+
+        # Persistencia de los módulos del flujo crítico.
+        chacra.api.programacion -> chacra.db "Guarda las programaciones" "SQL/TCP"
+        chacra.api.lecturas -> chacra.db "Guarda las lecturas" "SQL/TCP"
+
     }
 
     views {
@@ -42,6 +81,10 @@ workspace "ChacraSmart Majes" "Modelo C4 de la plataforma de riego inteligente d
             autolayout lr
         }
         container chacra "Contenedores" "Nivel 2: contenedores de ChacraSmart Majes." {
+            include *
+            autolayout lr
+        }
+        component chacra.api "Componentes" "Nivel 3: módulos del monolito modular (ADR-001)." {
             include *
             autolayout lr
         }
