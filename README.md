@@ -366,3 +366,55 @@ integración continua.
 - Repositorio: **`cs-2026b-lab04--grupo04`** (público, con el docente como colaborador)
 - Fecha de trabajo: **04/10/2026**
 - Revisión cruzada: cada integrante abre al menos un Pull Request y otro lo revisa y aprueba
+
+
+---
+
+## Patrones de diseño (Laboratorio 07)
+
+En este laboratorio se refactorizó el flujo crítico de **ChacraSmart Majes** (*"Programar y ejecutar orden de riego sobre válvula con falla segura"*, diseñado en el Lab 05) hacia patrones de diseño GoF, midiendo la reducción de complejidad ciclomática con `radon` y blindando la integridad con una red de pruebas en `pytest`. Además, se aisló el componente de IA generativa de recomendación de riego con guardrails deterministas y caché.
+
+### 1. Tabla Olor de Código → Patrón Adoptado → Principio SOLID → Prueba Asociada
+
+| # | Olor de Código Detectado | Patrón GoF Aplicado | Principio SOLID | Prueba en `tests/` que lo Demuestra |
+|---|---|---|---|---|
+| **1** | Escalera `if/elif` por marca de actuador (`RAINBIRD`, `HUNTER`, `TUYA`). | **Strategy + Adapter + Factory** | **O — Abierto/Cerrado (OCP)** y **D — Inversión de Dependencias (DIP)** | `test_open_closed_nuevo_hardware_sin_modificar_servicio` |
+| **2** | Lógica de cálculo agronómico (`GOTEO`, `ASPERSION`, `DEFICITARIO`) acoplada al servicio. | **Strategy + Factory** | **O — Abierto/Cerrado (OCP)** y **S — Responsabilidad Única (SRP)** | `test_open_closed_nueva_politica_riego_sin_modificar_servicio` |
+| **3** | Bucle de reintentos por timeout duplicado idénticamente en cada actuador. | **Decorator** (`ConReintentos`) | **S — Responsabilidad Única (SRP)** | `test_decorator_reintentos_controlador_valvula` y `test_reintenta_tras_dos_timeouts` |
+| **4** | Control de estados mediante cadenas primitivas (`"CERRADA"`, `"ABIERTA"`, etc.) e `if` anidados. | **State** (`EstadoValvulaBase` y subclases) | **S — Responsabilidad Única (SRP)** y **L — Sustitución de Liskov (LSP)** | `test_state_transiciones_validas_completas` e `test_state_impide_transiciones_invalidas` |
+| **5** | Manipulación manual de listas de eventos e inserción directa de alertas SMS. | **Observer** (`PublicadorEventos` y suscriptores) | **O — Abierto/Cerrado (OCP)** | `test_observer_nuevo_suscriptor_sin_tocar_servicio` |
+| **6** | Despacho síncrono de órdenes sin registro ni posibilidad de auditoría de campo. | **Command** (`ComandoAbrirValvula`, `InvocadorRiego`) | **S — Responsabilidad Única (SRP)** | `test_command_invocador_mantiene_historial` |
+| **7** | Llamadas directas y desprotegidas a la API de IA (riesgo de sobre-riego y costo duplicado). | **Strategy/Adapter + Decorator (Caché) + Chain of Responsibility (Guardrails)** | **Robustez y Seguridad Hídrica (QA-01 / ADR-003)** | `test_decorator_cache_evita_llamadas_repetidas_al_llm` y `test_chain_guardrails_bloquea_sobre_riego` |
+
+### 2. Tabla Comparativa de Métricas (radon cc y radon raw)
+
+| Métrica / Dimensión | Versión Antes (Monolítica) | Versión Después (Patrones GoF) | Variación | Impacto Técnico |
+|---|---|---|---|---|
+| **Complejidad `ejecutar_orden_riego`** | **25 (Rango D - Alerta Crítica)** | **3 (Rango A - Excelente)** | **-88.0%** | Código lineal, sin anidamientos ni acoplamiento. |
+| **Complejidad `cerrar_valvula`** | **15 (Rango C - Alto Riesgo)** | **2 (Rango A - Excelente)** | **-86.7%** | Cierre seguro delegado al patrón Command y State. |
+| **Complejidad Promedio Global** | **10.16 (Rango C)** | **2.16 (Rango A)** | **-78.7%** | Todo el módulo opera en zona verde de mantenibilidad. |
+| **Máxima Complejidad del Sistema** | **25 (Rango D)** | **5 (Rango A)** | **-80.0%** | Cumple holgadamente el umbral del CI (CC <= 10). |
+| **SLOC del Servicio Principal** | 159 líneas | 108 líneas | -32.1% | Reducción de código en el núcleo de aplicación. |
+| **SLOC Total Módulo (7 archivos)** | 159 líneas | 561 líneas | +252.8% | Trade-off: más líneas e indirección a cambio de extensibilidad. |
+| **Pruebas Automatizadas** | 10 pruebas base | 33 pruebas (100% verde en 0.12s) | +230% | Red de seguridad con fixture parametrizado antes/después. |
+
+### 3. Ejecución de Pruebas y Reproducibilidad
+
+```bash
+# 1. Ejecutar las 33 pruebas automatizadas (caracterización y patrones)
+pytest -v tests/
+
+# 2. Medir la complejidad ciclomática con radon
+radon cc -s -a src/valvulas_riego/
+
+# 3. Verificar que ningún método de producción supere el umbral C (complejidad > 10)
+radon cc --min C src/valvulas_riego/servicio.py src/valvulas_riego/estados.py src/valvulas_riego/actuadores.py
+```
+
+### 4. Documentación y Entregables del Laboratorio 07
+- **ADR-005 (Patrones de Diseño):** [`docs/architecture/adr/005-patrones-de-diseno.md`](docs/architecture/adr/005-patrones-de-diseno.md)
+- **Detección de Olores y Decisiones:** [`docs/design/patrones/olores.md`](docs/design/patrones/olores.md)
+- **Métricas y Análisis de Trade-off:** [`docs/design/patrones/metricas.md`](docs/design/patrones/metricas.md)
+- **Bitácora de Co-diseño con IA (6 interacciones):** [`docs/design/patrones/bitacora-ia.md`](docs/design/patrones/bitacora-ia.md)
+- **Diagramas de Clases por Patrón:** [`docs/design/patrones/`](docs/design/patrones/) y [`docs/design/clases.puml`](docs/design/clases.puml)
+- **Workflow de Integración Continua (GitHub Actions):** [`.github/workflows/ci.yml`](.github/workflows/ci.yml)

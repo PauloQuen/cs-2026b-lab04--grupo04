@@ -1,0 +1,43 @@
+name: CI - Verificación de Pruebas y Complejidad (Lab 07)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-and-complexity:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout del Repositorio
+      uses: actions/checkout@v4
+
+    - name: Configurar Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: 'pip'
+
+    - name: Instalar Dependencias
+      run: |
+        python -m pip install --upgrade pip
+        pip install pytest radon pylint matplotlib python-docx
+
+    - name: Ejecutar Pruebas Automatizadas (pytest)
+      run: |
+        pytest -v tests/
+
+    - name: Verificar Umbral de Complejidad Ciclomática (radon cc --min C)
+      run: |
+        echo "Analizando que ningun metodo supere complejidad 10 (Rango C o superior)..."
+        # radon cc --min C devuelve codigo != 0 si encuentra bloques de complejidad >= 11
+        OUTPUT=$(radon cc --min C src/valvulas_riego/servicio.py src/valvulas_riego/estados.py src/valvulas_riego/actuadores.py src/valvulas_riego/politicas.py src/valvulas_riego/eventos.py src/valvulas_riego/comandos.py src/valvulas_riego/ia.py)
+        if [ -n "$OUTPUT" ]; then
+          echo "ERROR: Se encontraron bloques con complejidad ciclomática superior a 10:"
+          echo "$OUTPUT"
+          exit 1
+        else
+          echo "SUCCESS: Todos los métodos de producción operan con complejidad A o B (CC <= 10)."
+        fi
