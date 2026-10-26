@@ -1,0 +1,69 @@
+@startuml patron-observer-command
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam classFontSize 12
+skinparam classAttributeIconSize 0
+skinparam roundcorner 8
+
+title ChacraSmart Majes — Patrones Observer y Command (E4 / E7)
+
+' OBSERVER
+interface "Suscriptor" as Suscriptor <<Observer>> {
+  +actualizar(evento: str, datos: dict): void
+}
+
+class "PublicadorEventos" as PublicadorEventos <<Subject>> {
+  -_suscriptores: dict
+  +suscribir(evento: str, suscriptor: Suscriptor): void
+  +desuscribir(evento: str, suscriptor: Suscriptor): void
+  +publicar(evento: str, datos: dict): void
+}
+
+class "NotificadorAgricultorSMS" as NotificadorSMS <<ConcreteObserver>> {
+  +bandeja: list
+  +actualizar(evento: str, datos: dict): void
+}
+
+class "MonitorAuditoriaIoT" as MonitorAuditoria <<ConcreteObserver>> {
+  +bandeja: list
+  +actualizar(evento: str, datos: dict): void
+}
+
+class "MonitorTelemetria" as MonitorTelemetria <<ConcreteObserver>> {
+  +bandeja: list
+  +actualizar(evento: str, datos: dict): void
+}
+
+' COMMAND
+interface "ComandoRiego" as ComandoRiego <<Command>> {
+  +ejecutar(): ResultadoOperacion
+}
+
+class "ComandoAbrirValvula" as ComandoAbrir <<ConcreteCommand>> {
+  -valvula: Valvula
+  -controlador: ControladorValvula
+  -duracion_min: int
+  +ejecutar(): ResultadoOperacion
+}
+
+class "ComandoCerrarValvula" as ComandoCerrar <<ConcreteCommand>> {
+  -valvula: Valvula
+  -controlador: ControladorValvula
+  +ejecutar(): ResultadoOperacion
+}
+
+class "InvocadorRiego" as InvocadorRiego <<Invoker>> {
+  +historial: list
+  +ejecutar_comando(comando: ComandoRiego): ResultadoOperacion
+}
+
+' Relaciones
+PublicadorEventos o--> Suscriptor : notifica a
+Suscriptor <|.. NotificadorSMS
+Suscriptor <|.. MonitorAuditoria
+Suscriptor <|.. MonitorTelemetria
+
+InvocadorRiego o--> ComandoRiego : despacha y registra
+ComandoRiego <|.. ComandoAbrir
+ComandoRiego <|.. ComandoCerrar
+@enduml

@@ -4,108 +4,154 @@ skinparam shadowing false
 skinparam defaultFontName Arial
 skinparam classBackgroundColor #EEF2F8
 skinparam classBorderColor #1A3A5C
-title ChacraSmart Majes — Riego y control de válvulas (diseño · E1)
+title ChacraSmart Majes — Diagrama de Clases General Refactorizado con Patrones (Lab 07 · E7)
 skinparam nodesep 25
-skinparam ranksep 40
+skinparam ranksep 35
 
-' --- Actores y estructura del dominio (RF-03, RF-04) ---
-class Agricultor {
-  - id: UUID
-  - nombre: String
-  - celular: String
-}
-class Parcela {
-  - id: UUID
-  - nombre: String
-  - distrito: String
-  + humedadActual(): LecturaHumedad
-}
-class Valvula {
-  - id: UUID
-  - nombre: String
-  - estado: EstadoValvula
-  - aperturaMaximaMin: int
-  + abrir(duracionMin: int): void
+' --- Dominio Central y Patrón State (E3) ---
+class Valvula <<Context>> {
+  - id: str
+  - nombre: str
+  - parcela_id: str
+  - apertura_maxima_min: int
+  - _estado: EstadoValvulaBase
+  + estado(): str
+  + cambiar_a(nuevo: EstadoValvulaBase): void
+  + abrir(duracion_min: int): void
+  + confirmar_apertura(): void
   + cerrar(): void
-  + confirmarApertura(): void
-  + confirmarCierre(): void
-  + fallarCierreSeguro(): void
-}
-class ProgramacionRiego {
-  - id: UUID
-  - horaInicio: DateTime
-  - duracionMin: int
-  - estado: EstadoProgramacion
-  + iniciar(): void
-  + finalizar(): void
-  + cancelar(motivo: String): void
-}
-class LecturaHumedad {
-  - id: UUID
-  - valorPorcentaje: Decimal
-  - fechaHora: DateTime
-  + estaBajoUmbral(umbral: Decimal): bool
+  + confirmar_cierre(): void
+  + fallar_cierre_seguro(): void
 }
 
-' --- Enumeraciones (coherentes con E3) ---
-enum EstadoValvula {
-  CERRADA
-  ABRIENDO
-  ABIERTA
-  CERRANDO
-  FALLA
-}
-enum EstadoProgramacion {
-  PENDIENTE
-  EN_CURSO
-  FINALIZADA
-  CANCELADA
+abstract class EstadoValvulaBase <<State>> {
+  + nombre: str
+  + abrir(valvula: Valvula, duracion_min: int): void
+  + confirmar_apertura(valvula: Valvula): void
+  + cerrar(valvula: Valvula): void
+  + confirmar_cierre(valvula: Valvula): void
+  + fallar_cierre_seguro(valvula: Valvula): void
 }
 
-' --- Servicio de aplicación ---
-class ServicioRiego <<servicio>> {
-  + programarRiego(parcelaId: UUID, horaInicio: DateTime, duracionMin: int): ProgramacionRiego
-  + aperturaRemota(valvulaId: UUID, duracionMin: int): void
-  + evaluarRiegoAutomatico(parcelaId: UUID): void
+class EstadoCerrada <<ConcreteState>>
+class EstadoAbriendo <<ConcreteState>>
+class EstadoAbierta <<ConcreteState>>
+class EstadoCerrando <<ConcreteState>>
+class EstadoFalla <<ConcreteState>>
+
+Valvula o--> EstadoValvulaBase : delega ciclo de vida en >
+EstadoValvulaBase <|-- EstadoCerrada
+EstadoValvulaBase <|-- EstadoAbriendo
+EstadoValvulaBase <|-- EstadoAbierta
+EstadoValvulaBase <|-- EstadoCerrando
+EstadoValvulaBase <|-- EstadoFalla
+
+' --- Patrones Strategy, Adapter, Decorator y Factory para Actuadores (E2, E4) ---
+interface ControladorValvula <<Target / Port>> {
+  + abrir(valvula_id: str, duracion_min: int): ResultadoOperacion
+  + cerrar(valvula_id: str): ResultadoOperacion
 }
 
-' --- Puertos (interfaces) hacia servicios externos y persistencia ---
-interface ControladorValvula <<puerto>> {
-  + abrir(valvulaId: UUID, duracionMin: int): void
-  + cerrar(valvulaId: UUID): void
-  + consultarEstado(valvulaId: UUID): EstadoValvula
+class AdaptadorRainBird <<Adapter>>
+class AdaptadorHunter <<Adapter>>
+class AdaptadorTuya <<Adapter>>
+class ConReintentos <<Decorator>>
+
+ControladorValvula <|.. AdaptadorRainBird
+ControladorValvula <|.. AdaptadorHunter
+ControladorValvula <|.. AdaptadorTuya
+ControladorValvula <|.. ConReintentos
+ConReintentos o--> ControladorValvula : envuelve con reintentos >
+
+class FabricaControladores <<Factory>> {
+  + registrar(tipo: str, creador: Any): void
+  + crear(tipo: str): ControladorValvula
 }
-interface Notificador <<puerto>> {
-  + notificarAlerta(agricultorId: UUID, mensaje: String): void
+FabricaControladores ..> ControladorValvula : instancia >
+
+' --- Patrón Strategy para Políticas Agronómicas (E2) ---
+interface PoliticaRiego <<Strategy>> {
+  + calcular_duracion(duracion_min: int, humedad: float): int
 }
-interface RepositorioRiego <<puerto>> {
-  + buscarValvula(id: UUID): Valvula
-  + buscarValvulasPorParcela(parcelaId: UUID): list
-  + guardarProgramacion(p: ProgramacionRiego): void
+class PoliticaGoteo <<ConcreteStrategy>>
+class PoliticaAspersion <<ConcreteStrategy>>
+class PoliticaDeficitarioMajes <<ConcreteStrategy>>
+
+PoliticaRiego <|.. PoliticaGoteo
+PoliticaRiego <|.. PoliticaAspersion
+PoliticaRiego <|.. PoliticaDeficitarioMajes
+
+class FabricaPoliticas <<Factory>> {
+  + registrar(nombre: str, clase: Any): void
+  + crear(nombre: str): PoliticaRiego
+}
+FabricaPoliticas ..> PoliticaRiego : instancia >
+
+' --- Patrón Observer para Eventos (E4) ---
+class PublicadorEventos <<Subject>> {
+  + suscribir(evento: str, s: Suscriptor): void
+  + publicar(evento: str, datos: dict): void
+}
+interface Suscriptor <<Observer>> {
+  + actualizar(evento: str, datos: dict): void
+}
+class NotificadorAgricultorSMS <<ConcreteObserver>>
+class MonitorAuditoriaIoT <<ConcreteObserver>>
+class MonitorTelemetria <<ConcreteObserver>>
+
+PublicadorEventos o--> Suscriptor : notifica >
+Suscriptor <|.. NotificadorAgricultorSMS
+Suscriptor <|.. MonitorAuditoriaIoT
+Suscriptor <|.. MonitorTelemetria
+
+' --- Patrón Command para Órdenes de Riego (E4) ---
+interface ComandoRiego <<Command>> {
+  + ejecutar(): ResultadoOperacion
+}
+class ComandoAbrirValvula <<ConcreteCommand>>
+class ComandoCerrarValvula <<ConcreteCommand>>
+class InvocadorRiego <<Invoker>> {
+  + historial: list
+  + ejecutar_comando(cmd: ComandoRiego): ResultadoOperacion
 }
 
-' --- Adaptadores (ADR-001: integraciones externas detrás de puertos) ---
-class ControladorCampoAdapter <<adaptador>>
-class MensajeriaAdapter <<adaptador>>
+ComandoRiego <|.. ComandoAbrirValvula
+ComandoRiego <|.. ComandoCerrarValvula
+InvocadorRiego o--> ComandoRiego : despacha >
 
-' --- Relaciones con multiplicidad en ambos extremos (regla C3) ---
-Agricultor "1" -- "0..*" Parcela : posee >
-Parcela "1" *-- "0..*" Valvula : contiene >
-Parcela "1" -- "0..*" LecturaHumedad : registra >
-Parcela "1" -- "0..*" ProgramacionRiego : programa >
-ProgramacionRiego "0..*" --> "1" Valvula : activa >
-Valvula --> EstadoValvula
-ProgramacionRiego --> EstadoProgramacion
+' --- Patrón IA Aislada (Strategy + Decorator + Chain of Responsibility) (E5) ---
+interface ProveedorLLM <<Strategy>> {
+  + completar(prompt: str): str
+}
+class ConCache <<Decorator>>
+abstract class Guardrail <<Chain of Resp.>> {
+  + validar(texto: str, ctx: dict): str
+  # _aplicar(texto: str, ctx: dict): str
+}
+class GuardrailMaximoRiego <<ConcreteHandler>>
+class GuardrailConsistenciaHumedad <<ConcreteHandler>>
+class GuardrailLenguajeCampesino <<ConcreteHandler>>
+class ServicioRecomendacionIA <<Facade>>
 
-' --- Realización de puertos ---
-ControladorValvula <|.. ControladorCampoAdapter
-Notificador <|.. MensajeriaAdapter
+ProveedorLLM <|.. ConCache
+ConCache o--> ProveedorLLM
+Guardrail <|-- GuardrailMaximoRiego
+Guardrail <|-- GuardrailConsistenciaHumedad
+Guardrail <|-- GuardrailLenguajeCampesino
+Guardrail o--> Guardrail : _siguiente >
+ServicioRecomendacionIA --> ProveedorLLM
+ServicioRecomendacionIA --> Guardrail
 
-' --- Dependencias del servicio (usa puertos, no implementaciones) ---
-ServicioRiego ..> ProgramacionRiego
-ServicioRiego ..> Valvula
-ServicioRiego ..> LecturaHumedad
-ServicioRiego ..> ControladorValvula
-ServicioRiego ..> Notificador
-ServicioRiego ..> RepositorioRiego
+' --- Servicio Orquestador de Aplicación ---
+class ServicioRiego <<Service>> {
+  + ejecutar_orden_riego(...): str
+  + cerrar_valvula(...): str
+  + explicar_recomendacion_ia(...): str
+}
+
+ServicioRiego --> FabricaControladores
+ServicioRiego --> FabricaPoliticas
+ServicioRiego --> PublicadorEventos
+ServicioRiego --> InvocadorRiego
+ServicioRiego --> ServicioRecomendacionIA
 @enduml

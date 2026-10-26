@@ -1,0 +1,91 @@
+@startuml patron-strategy-adapter-factory
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam classFontSize 12
+skinparam classAttributeIconSize 0
+skinparam roundcorner 8
+
+title ChacraSmart Majes — Patrones Strategy, Adapter, Decorator y Factory (E2 / E7)
+
+interface "ControladorValvula" as ControladorValvula <<Target / Interface>> {
+  +abrir(valvula_id: str, duracion_min: int): ResultadoOperacion
+  +cerrar(valvula_id: str): ResultadoOperacion
+}
+
+class "AdaptadorRainBird" as AdaptadorRainBird <<Adapter>> {
+  -sdk: RainBirdControllerSDK
+  +abrir(valvula_id: str, duracion_min: int): ResultadoOperacion
+  +cerrar(valvula_id: str): ResultadoOperacion
+}
+
+class "AdaptadorHunter" as AdaptadorHunter <<Adapter>> {
+  -sdk: HunterProC_SDK
+  +abrir(valvula_id: str, duracion_min: int): ResultadoOperacion
+  +cerrar(valvula_id: str): ResultadoOperacion
+}
+
+class "AdaptadorTuya" as AdaptadorTuya <<Adapter>> {
+  -sdk: TuyaZigbeeRelaySDK
+  +abrir(valvula_id: str, duracion_min: int): ResultadoOperacion
+  +cerrar(valvula_id: str): ResultadoOperacion
+}
+
+class "ConReintentos" as ConReintentos <<Decorator>> {
+  -_interno: ControladorValvula
+  +max_intentos: int
+  +abrir(valvula_id: str, duracion_min: int): ResultadoOperacion
+  +cerrar(valvula_id: str): ResultadoOperacion
+}
+
+class "FabricaControladores" as FabricaControladores <<Factory>> {
+  -_creadores: dict
+  +registrar(tipo: str, creador: Any): void
+  +crear(tipo: str): ControladorValvula
+}
+
+interface "PoliticaRiego" as PoliticaRiego <<Strategy>> {
+  +calcular_duracion(duracion_min: int, humedad: float): int
+}
+
+class "PoliticaGoteo" as PoliticaGoteo <<ConcreteStrategy>> {
+  +calcular_duracion(duracion_min: int, humedad: float): int
+}
+
+class "PoliticaAspersion" as PoliticaAspersion <<ConcreteStrategy>> {
+  +calcular_duracion(duracion_min: int, humedad: float): int
+}
+
+class "PoliticaDeficitarioMajes" as PoliticaDeficitario <<ConcreteStrategy>> {
+  +calcular_duracion(duracion_min: int, humedad: float): int
+}
+
+class "FabricaPoliticas" as FabricaPoliticas <<Factory>> {
+  -_politicas: dict
+  +registrar(nombre: str, clase: Any): void
+  +crear(nombre: str): PoliticaRiego
+}
+
+class "ServicioRiego" as ServicioRiego <<Client>> {
+  +ejecutar_orden_riego(...): str
+  +cerrar_valvula(...): str
+}
+
+' Relaciones
+ControladorValvula <|.. AdaptadorRainBird
+ControladorValvula <|.. AdaptadorHunter
+ControladorValvula <|.. AdaptadorTuya
+ControladorValvula <|.. ConReintentos
+ConReintentos o--> ControladorValvula : envuelve
+
+FabricaControladores ..> ControladorValvula : crea
+FabricaPoliticas ..> PoliticaRiego : crea
+
+PoliticaRiego <|.. PoliticaGoteo
+PoliticaRiego <|.. PoliticaAspersion
+PoliticaRiego <|.. PoliticaDeficitario
+
+ServicioRiego --> FabricaControladores : consulta
+ServicioRiego --> FabricaPoliticas : consulta
+ServicioRiego --> ControladorValvula : usa
+ServicioRiego --> PoliticaRiego : usa
+@enduml

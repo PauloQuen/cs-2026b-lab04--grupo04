@@ -1,0 +1,71 @@
+@startuml patron-ia-chain-cache
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam classFontSize 12
+skinparam classAttributeIconSize 0
+skinparam roundcorner 8
+
+title ChacraSmart Majes — Componente de IA Aislado (E5 / E7)
+
+interface "ProveedorLLM" as ProveedorLLM <<Strategy / Target>> {
+  +completar(prompt: str): str
+}
+
+class "AdaptadorLLMSimulado" as AdaptadorSimulado <<Adapter>> {
+  -_cliente: ClienteLLMSimulado
+  +completar(prompt: str): str
+}
+
+class "AdaptadorOllama" as AdaptadorOllama <<Adapter>> {
+  +modelo: str
+  +endpoint: str
+  +completar(prompt: str): str
+}
+
+class "ConCache" as ConCache <<Decorator>> {
+  -_interno: ProveedorLLM
+  -_cache: dict
+  +completar(prompt: str): str
+}
+
+abstract class "Guardrail" as Guardrail <<Handler / Chain of Responsibility>> {
+  -_siguiente: Guardrail
+  +validar(texto: str, contexto: dict): str
+  #{abstract} _aplicar(texto: str, contexto: dict): str
+}
+
+class "GuardrailMaximoRiego" as GuardrailMaximo <<ConcreteHandler>> {
+  #_aplicar(texto: str, contexto: dict): str
+  note right: QA-01: Bloquea recomendaciones\ncon duracion > apertura_maxima
+}
+
+class "GuardrailConsistenciaHumedad" as GuardrailConsistencia <<ConcreteHandler>> {
+  #_aplicar(texto: str, contexto: dict): str
+  note right: Bloquea humedad < 0% o > 100%
+}
+
+class "GuardrailLenguajeCampesino" as GuardrailLenguaje <<ConcreteHandler>> {
+  #_aplicar(texto: str, contexto: dict): str
+  note right: Bloquea afirmaciones prohibidas\ny falsas promesas comerciales
+}
+
+class "ServicioRecomendacionIA" as ServicioIA <<Facade / Client>> {
+  -_proveedor: ProveedorLLM
+  -_guardrails: Guardrail
+  +generar_explicacion(cultivo, humedad, duracion_min, apertura_max_min): str
+}
+
+' Relaciones
+ProveedorLLM <|.. AdaptadorSimulado
+ProveedorLLM <|.. AdaptadorOllama
+ProveedorLLM <|.. ConCache
+ConCache o--> ProveedorLLM : envuelve
+
+Guardrail <|-- GuardrailMaximo
+Guardrail <|-- GuardrailConsistencia
+Guardrail <|-- GuardrailLenguaje
+Guardrail o--> Guardrail : _siguiente
+
+ServicioIA --> ProveedorLLM : consulta texto crudo
+ServicioIA --> Guardrail : filtra con cadena determinista
+@enduml

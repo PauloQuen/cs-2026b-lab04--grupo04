@@ -1,0 +1,79 @@
+@startuml patron-state
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam classFontSize 12
+skinparam classAttributeIconSize 0
+skinparam roundcorner 8
+
+title ChacraSmart Majes — Patrón State para Ciclo de Vida de Valvula (E3 / E7)
+
+class "Valvula" as Valvula <<Context>> {
+  +id: str
+  +nombre: str
+  +parcela_id: str
+  +apertura_maxima_min: int
+  -_estado: EstadoValvulaBase
+  +ack_operacion: str
+  +estado(): str
+  +cambiar_a(nuevo: EstadoValvulaBase): void
+  +abrir(duracion_min: int): void
+  +confirmar_apertura(): void
+  +cerrar(): void
+  +confirmar_cierre(): void
+  +fallar_cierre_seguro(): void
+}
+
+abstract class "EstadoValvulaBase" as EstadoValvulaBase <<State>> {
+  {static} +nombre: str
+  +abrir(valvula: Valvula, duracion_min: int): void
+  +confirmar_apertura(valvula: Valvula): void
+  +cerrar(valvula: Valvula): void
+  +confirmar_cierre(valvula: Valvula): void
+  +fallar_cierre_seguro(valvula: Valvula): void
+}
+
+class "EstadoCerrada" as EstadoCerrada <<ConcreteState>> {
+  +nombre = "CERRADA"
+  +abrir(valvula: Valvula, duracion_min: int): void
+}
+
+class "EstadoAbriendo" as EstadoAbriendo <<ConcreteState>> {
+  +nombre = "ABRIENDO"
+  +confirmar_apertura(valvula: Valvula): void
+  +fallar_cierre_seguro(valvula: Valvula): void
+}
+
+class "EstadoAbierta" as EstadoAbierta <<ConcreteState>> {
+  +nombre = "ABIERTA"
+  +cerrar(valvula: Valvula): void
+  +fallar_cierre_seguro(valvula: Valvula): void
+}
+
+class "EstadoCerrando" as EstadoCerrando <<ConcreteState>> {
+  +nombre = "CERRANDO"
+  +confirmar_cierre(valvula: Valvula): void
+  +fallar_cierre_seguro(valvula: Valvula): void
+}
+
+class "EstadoFalla" as EstadoFalla <<ConcreteState>> {
+  +nombre = "FALLA"
+  +fallar_cierre_seguro(valvula: Valvula): void
+  note right: Falla Segura (QA-01 / ADR-003)\nBloqueada cerrada hasta técnico
+}
+
+' Relaciones
+Valvula o-> EstadoValvulaBase : delega comportamiento en
+EstadoValvulaBase <|-- EstadoCerrada
+EstadoValvulaBase <|-- EstadoAbriendo
+EstadoValvulaBase <|-- EstadoAbierta
+EstadoValvulaBase <|-- EstadoCerrando
+EstadoValvulaBase <|-- EstadoFalla
+
+EstadoCerrada ..> EstadoAbriendo : transiciona a
+EstadoAbriendo ..> EstadoAbierta : confirma
+EstadoAbriendo ..> EstadoFalla : falla segura
+EstadoAbierta ..> EstadoCerrando : cierra
+EstadoAbierta ..> EstadoFalla : falla segura
+EstadoCerrando ..> EstadoCerrada : confirma
+EstadoCerrando ..> EstadoFalla : falla segura
+@enduml
