@@ -1,0 +1,23 @@
+[importlinter]
+root_package = src.valvulas_riego
+
+[importlinter:contract:capas]
+name = FF-01 Capas arquitectónicas del módulo valvulas_riego sin ciclos (ADR-001)
+type = layers
+layers =
+    src.valvulas_riego.servicio
+    src.valvulas_riego.comandos | src.valvulas_riego.ia | src.valvulas_riego.eventos
+    src.valvulas_riego.politicas | src.valvulas_riego.actuadores
+    src.valvulas_riego.estados
+    src.valvulas_riego.dominio
+
+[importlinter:contract:puertos]
+name = FF-02 Dominio y Estados no conocen los adaptadores de hardware (ADR-005 / ADR-007)
+type = forbidden
+source_modules =
+    src.valvulas_riego.dominio
+    src.valvulas_riego.estados
+    src.valvulas_riego.politicas
+forbidden_modules =
+    src.valvulas_riego.actuadores
+    src.valvulas_riego.externos
