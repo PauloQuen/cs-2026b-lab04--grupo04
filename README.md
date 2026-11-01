@@ -418,3 +418,93 @@ radon cc --min C src/valvulas_riego/servicio.py src/valvulas_riego/estados.py sr
 - **Bitácora de Co-diseño con IA (6 interacciones):** [`docs/design/patrones/bitacora-ia.md`](docs/design/patrones/bitacora-ia.md)
 - **Diagramas de Clases por Patrón:** [`docs/design/patrones/`](docs/design/patrones/) y [`docs/design/clases.puml`](docs/design/clases.puml)
 - **Workflow de Integración Continua (GitHub Actions):** [`.github/workflows/ci.yml`](.github/workflows/ci.yml)
+
+
+---
+
+## Diseño de la Arquitectura Guiada por Atributos de Calidad (Lab 08)
+
+[![fitness-functions](https://github.com/PauloQuen/cs-2026b-lab04--grupo04/actions/workflows/fitness.yml/badge.svg)](https://github.com/PauloQuen/cs-2026b-lab04--grupo04/actions/workflows/fitness.yml)
+
+> **Caso 9:** ChacraSmart Majes 2.0 — Valle de Majes, Arequipa.  
+> **Detonante de Rediseño (Crecimiento):** Escalamiento de 50 a 2000 parcelas agrícolas; **ninguna válvula debe quedar abierta ante una falla**.  
+> **Atributos Críticos:** Protección (Safety), Fiabilidad, Rendimiento y Modificabilidad/Multitenencia.
+
+---
+
+### 1. Árbol de Utilidad (E1)
+
+Se estructuraron y calificaron los escenarios medibles del sistema en 4 dimensiones de calidad, corrigiendo la calificación técnica de la IA en multitenencia:
+
+![Árbol de Utilidad ChacraSmart Majes](docs/architecture/utilidad/arbol.png)
+
+- **Diagrama como código:** [`docs/architecture/utilidad/arbol.dot`](docs/architecture/utilidad/arbol.dot)
+- **Escenario Crítico Inmediato (H, H):** **QA-02** (Falla segura en campo ante corte abrupto de red celular).
+
+---
+
+### 2. Tabla Resumen de Iteraciones ADD 3.0 (E2, E4)
+
+| Iteración | Driver Objetivo | Táctica Arquitectónica Adoptada | Concepto Rechazado con Evidencia | Evidencia Cuantitativa | ¿Cumple Escenario? |
+|---|---|---|---|---|---|
+| **Iteración 1 (E2)** | **QA-01 (H, M)**: Ingesta y consulta de 2000 parcelas (67 req/s sostenidas, 120 req/s pico). | **Índice B-Tree compuesto** `(parcela_id, fecha DESC)` + **Caché Redis (TTL 60 s)** en Monolito Modular. | **Microservicios + Kafka + K8s** (propuesto por la IA; violaba R-01, R-02 y provocaba OOM en VPS de 4 GB). | Simulación $M/G/c$ en [`fitness/rendimiento.py`](fitness/rendimiento.py): $p95$ pasa de $39\text{ }846\text{ ms}$ a **$8.9\text{ ms}$** ante 120 req/s. | ✅ **SÍ** ($p95 \le 500\text{ ms}$) |
+| **Iteración 2 (E4)** | **QA-02 (H, H) [CRÍTICO]**: Cero válvulas abiertas ante corte de enlace. | **Temporizador local autónomo en hardware (ESP32 RTC)** + Válvula NC + **Circuit Breaker** en API + **Outbox en PostgreSQL**. | **Control centralizado en servidor** y reintentos infinitos (anegaban 144 parcelas en 1000 operaciones). | Simulación Monte Carlo en [`fitness/disponibilidad.py`](fitness/disponibilidad.py): **0 válvulas abiertas $> 5\text{ s}$** y reducción del 90% de llamadas sobre enlaces caídos. | ✅ **SÍ** (0 fallas de safety) |
+| **Iteración 3 (E4)** | **QA-04 (M, M)** y **QA-05 (H, M)**: Escalamiento a 6 comisiones de regantes. | **Row-Level Security (RLS)** en PostgreSQL + JWT claim + Particionamiento declarativo por fecha. | **Base de Datos por Sector** (satura RAM) y **Esquemas separados** (complejidad excesiva de migraciones). | Prueba automatizada de 10 000 peticiones con **0 violaciones de aislamiento**; alta de sector en 4.5 min sin tocar código. | ✅ **SÍ** (Aislamiento total y alta $\le 1\text{ h}$) |
+
+---
+
+### 3. Evaluación ATAM-lite y Matriz de Riesgos (E3, E7)
+
+Evaluación cruzada apoyada en un evaluador adversario de IA escéptico ([`docs/architecture/atam-lite.md`](docs/architecture/atam-lite.md)):
+
+![Matriz de Riesgos ATAM-lite](docs/architecture/diagramas/matriz_riesgos.png)
+
+- **Puntos de Sensibilidad:** Tasa de aciertos de caché en Redis (cubierto por índice B-tree en arranque en frío) y calibración de RTC en controladores de campo.
+- **Puntos de Trade-off:** Frescura de humedad (TTL 60 s) a cambio de proteger el VPS; autonomía de cierre local frente a observabilidad en tiempo real durante caídas de red.
+- **Riesgos Mitigados:** Falla de VPS único (R1: respaldos S3 y RTO < 2 h), desincronización de reloj (R2: RTC DS3231 + NTP), y fuga mecánica (R3: sensor de flujo por pulsos).
+- **Falso Positivo de la IA Refutado:** La IA afirmó que Celery colapsaría; se demostró que Celery solo atiende excepciones ($< 5\text{ tareas/minuto}$).
+
+---
+
+### 4. Fitness Functions Automatizadas en CI (E5)
+
+Protección de la arquitectura frente a degradación evolutiva mediante compuertas en GitHub Actions:
+
+```bash
+# 1. Fitness Functions Estructurales (import-linter)
+lint-imports
+
+# 2. Fitness Functions de Calidad (pytest)
+pytest -v tests/test_fitness.py
+```
+
+| Código FF | Tipo | Regla / Escenario Verificado | Herramienta | Estado |
+|---|---|---|---|---|
+| **FF-01** | Estructural | Capas arquitectónicas del módulo `valvulas_riego` sin dependencias cíclicas (ADR-001). | `import-linter` | ✅ KEPT |
+| **FF-02** | Estructural | Aislamiento de puertos: Dominio y Estados no conocen adaptadores de hardware (ADR-005, ADR-007). | `import-linter` | ✅ KEPT |
+| **FF-03** | Calidad | Presupuesto de latencia nominal ($p95 \le 500\text{ ms}$) ante 2000 parcelas (67 req/s). | `pytest` + $M/G/c$ | ✅ PASSED |
+| **FF-04** | Calidad | Presupuesto de latencia en campaña pico ($p95 \le 500\text{ ms}$ a 120 req/s). | `pytest` + $M/G/c$ | ✅ PASSED |
+| **FF-05** | Calidad (Safety) | Cero válvulas abiertas más de 5 s tras corte de red celular (1000 operaciones). | `pytest` + Monte Carlo | ✅ PASSED |
+| **FF-06** | Calidad | Circuit Breaker reduce más del 80% de llamadas hacia controladores caídos. | `pytest` + Monte Carlo | ✅ PASSED |
+| **FF-07** | Calidad | Aislamiento estricto de multitenencia entre las 6 comisiones de regantes. | `pytest` | ✅ PASSED |
+
+> **Comprobación de falla documentada:** Se introdujo una violación temporal inyectando `import src.valvulas_riego.actuadores` en `dominio.py`. `lint-imports` detectó el fallo inmediatamente quebrando los contratos FF-01 y FF-02 (`Contracts: 0 kept, 2 broken`), impidiendo el merge en CI. La violación fue revertida.
+
+---
+
+### 5. Documentación y Entregables del Laboratorio 08
+
+- **Árbol de Utilidad:** [`docs/architecture/utilidad/arbol.dot`](docs/architecture/utilidad/arbol.dot) y [`arbol.png`](docs/architecture/utilidad/arbol.png)
+- **Iteraciones de ADD:**
+  - [Iteración 1: Rendimiento ante 2000 parcelas](docs/architecture/add/iteracion-1.md)
+  - [Iteración 2: Safety y Resiliencia ante cortes de red](docs/architecture/add/iteracion-2.md)
+  - [Iteración 3: Multitenencia por sectores de riego](docs/architecture/add/iteracion-3.md)
+- **Simulaciones de Calidad:** [`fitness/rendimiento.py`](fitness/rendimiento.py) y [`fitness/disponibilidad.py`](fitness/disponibilidad.py)
+- **Evaluación ATAM-lite y Riesgos:** [`docs/architecture/atam-lite.md`](docs/architecture/atam-lite.md) y [`docs/architecture/diagramas/matriz_riesgos.png`](docs/architecture/diagramas/matriz_riesgos.png)
+- **Nuevos Architectural Decision Records (ADRs):**
+  - [ADR-006: Índices B-Tree y Caché Redis para Telemetría](docs/architecture/adr/006-cache-e-indices-telemetria.md)
+  - [ADR-007: Fail-Safe Autónomo en Hardware, Watchdog y Circuit Breaker](docs/architecture/adr/007-watchdog-heartbeat-fail-safe-valvulas.md)
+  - [ADR-008: Multitenencia con Row-Level Security y Particionamiento](docs/architecture/adr/008-multitenencia-particionamiento-parcelas.md)
+- **Modelo C4 Actualizado con Trazabilidad [QA-xx]:** [`docs/architecture/c4/workspace.dsl`](docs/architecture/c4/workspace.dsl)
+- **Bitácora de Co-diseño con IA (11 interacciones):** [`docs/architecture/bitacora-ia.md`](docs/architecture/bitacora-ia.md)
+- **Configuración de CI y Fitness Functions:** [`.importlinter`](.importlinter), [`tests/test_fitness.py`](tests/test_fitness.py) y [`.github/workflows/fitness.yml`](.github/workflows/fitness.yml)
