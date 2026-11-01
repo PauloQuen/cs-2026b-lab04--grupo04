@@ -6,22 +6,22 @@ workspace "ChacraSmart Majes" "Modelo C4 de la plataforma de riego inteligente d
         agricultor = person "Agricultor" "Dueño de la parcela: consulta la humedad, programa riegos, abre y cierra válvulas de forma remota y recibe alertas (RF-02 a RF-05)."
         tecnico = person "Técnico" "Registra parcelas, sensores y válvulas y consulta si cada dispositivo está en línea o fuera de línea (RF-06, RF-07)."
 
-        chacra = softwareSystem "ChacraSmart Majes" "Plataforma de riego inteligente: recibe lecturas de humedad, permite programar riegos y controla las válvulas con falla segura local (QA-01)." {
-            pwa = container "PWA" "Interfaz para agricultores y técnicos; ligera para celulares de gama baja y apta para señal intermitente." "HTML / CSS / JavaScript (PWA)" "Web Browser"
-            api = container "API ChacraSmart" "Monolito modular: los casos de uso viven en cinco módulos de dominio que se comunican solo por interfaces públicas (ADR-001)." "Python / Django + gunicorn" {
-                lecturas = component "Módulo Lecturas" "Recibe y consulta lecturas de humedad del suelo (RF-01, RF-02)." "Django app"
-                programacion = component "Módulo Programación" "Crea, ejecuta y finaliza programaciones de riego (RF-03)." "Django app"
-                control_valvulas = component "Módulo Control de válvulas" "Órdenes de apertura y cierre con duración máxima; aísla el control crítico (RF-04, QA-01)." "Django app"
-                alertas = component "Módulo Alertas" "Genera y encola alertas por falta de agua y por estado del riego (RF-05)." "Django app"
-                dispositivos = component "Módulo Dispositivos" "Parcelas, sensores y válvulas y su estado en línea / fuera de línea (RF-06, RF-07)." "Django app"
+        chacra = softwareSystem "ChacraSmart Majes" "Plataforma de riego inteligente: recibe lecturas de humedad, permite programar riegos y controla las válvulas con falla segura local [QA-01 a QA-05]." {
+            pwa = container "PWA" "Interfaz para agricultores y técnicos [QA-02, QA-05]; offline-first y ligera para celulares de gama baja." "HTML / CSS / JavaScript (PWA)" "Web Browser"
+            api = container "API ChacraSmart" "Monolito modular [QA-01, QA-04]: atiende 67 req/s sostenidas y picos de 120 req/s con gunicorn, decoradores y Circuit Breaker (ADR-001, ADR-006, ADR-007)." "Python / Django + gunicorn" {
+                lecturas = component "Módulo Lecturas" "Recibe y consulta lecturas de humedad con caché Redis y particionado [QA-01] (RF-01, RF-02)." "Django app"
+                programacion = component "Módulo Programación" "Crea y finaliza programaciones de riego con duración atómica [QA-02] (RF-03)." "Django app"
+                control_valvulas = component "Módulo Control de válvulas" "Órdenes de apertura/cierre con duración máxima y Circuit Breaker [QA-02, QA-03] (RF-04, ADR-007)." "Django app"
+                alertas = component "Módulo Alertas" "Genera y encola alertas por falta de agua y anomalías en outbox [QA-03, QA-06] (RF-05)." "Django app"
+                dispositivos = component "Módulo Dispositivos" "Parcelas, sensores y válvulas con aislamiento RLS por sector [QA-04, QA-05] (RF-06, RF-07, ADR-008)." "Django app"
                 compartido = component "Módulo Compartido" "Tipos y utilidades comunes a todos los módulos (etiquetado y reglas del dominio)." "Python"
             }
-            worker = container "Worker de tareas" "Ejecuta de forma asíncrona el envío de alertas y sus reintentos." "Celery"
-            db = container "Base de datos" "Lecturas, programaciones, válvulas, parcelas y usuarios; un esquema por módulo." "PostgreSQL 16" "Database"
-            redis = container "Cola y caché" "Cola de tareas del worker y caché del estado de las válvulas abiertas (QA-01)." "Redis" "Queue"
+            worker = container "Worker de tareas" "Ejecuta de forma asíncrona el vaciado de tabla outbox de comandos y reintentos de alertas [QA-03]." "Celery"
+            db = container "Base de datos" "Lecturas, programaciones y parcelas [QA-01, QA-04, QA-05]: PostgreSQL 16 con índices compuestos, particionamiento y RLS (ADR-006, ADR-008)." "PostgreSQL 16" "Database"
+            redis = container "Cola y caché" "Cola de tareas del worker y caché de telemetría de parcelas con TTL de 60 s [QA-01, QA-03] (ADR-006)." "Redis" "Queue"
         }
 
-        controlador = softwareSystem "Controlador de campo" "Dispositivo en la parcela: lee el sensor, acciona la válvula y la cierra solo al cumplirse el tiempo programado aunque se pierda la conexión (ADR-003)." "Externo"
+        controlador = softwareSystem "Controlador de campo" "Dispositivo en parcela [QA-02, QA-03]: Controlador embebido (ESP32 + RTC DS3231) con temporizador local autónomo y solenoide NC; falla segura local en <= 5 s (ADR-003, ADR-007)." "Externo"
         mensajeria = softwareSystem "Servicio de mensajería" "Envía las alertas por WhatsApp / SMS a los usuarios (R-06)." "Externo"
 
         # ---------------------------------------------------------------- Nivel 1: contexto
