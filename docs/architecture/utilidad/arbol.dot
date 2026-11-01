@@ -1,0 +1,55 @@
+digraph ArbolUtilidad {
+    rankdir=LR;
+    node [shape=box, style="filled,rounded", fontname="Arial", fontsize=10];
+    edge [fontname="Arial", fontsize=9, color="#4A5568"];
+
+    // Raíz
+    utilidad [label="Utilidad de la Arquitectura\nChacraSmart Majes 2.0\n(2000 parcelas)", fillcolor="#1A365D", fontcolor="white", penwidth=2];
+
+    // Atributos de calidad
+    safety [label="Protección (Safety)\ny Fiabilidad", fillcolor="#2C5282", fontcolor="white"];
+    rendimiento [label="Rendimiento", fillcolor="#2C5282", fontcolor="white"];
+    disponibilidad [label="Disponibilidad", fillcolor="#2C5282", fontcolor="white"];
+    modificabilidad [label="Modificabilidad y\nMultitenencia", fillcolor="#2C5282", fontcolor="white"];
+    seguridad [label="Seguridad e\nIntegridad", fillcolor="#2C5282", fontcolor="white"];
+
+    utilidad -> safety;
+    utilidad -> rendimiento;
+    utilidad -> disponibilidad;
+    utilidad -> modificabilidad;
+    utilidad -> seguridad;
+
+    // Subcategorías / Refinamientos
+    ref_cierre [label="Falla segura ante\ncorte de red", fillcolor="#E2E8F0", fontcolor="#1A202C"];
+    ref_fuga [label="Detección de\nanomalías / fuga", fillcolor="#E2E8F0", fontcolor="#1A202C"];
+    ref_ingesta [label="Ingesta masiva de\ntelemetría", fillcolor="#E2E8F0", fontcolor="#1A202C"];
+    ref_resiliencia [label="Tolerancia a fallas\nde comunicación", fillcolor="#E2E8F0", fontcolor="#1A202C"];
+    ref_sectores [label="Escalamiento a 6\nsectores de riego", fillcolor="#E2E8F0", fontcolor="#1A202C"];
+    ref_hardware [label="Nuevos sensores y\nactuadores", fillcolor="#E2E8F0", fontcolor="#1A202C"];
+    ref_aislamiento [label="Aislamiento entre\nparcelas / sectores", fillcolor="#E2E8F0", fontcolor="#1A202C"];
+
+    safety -> ref_cierre;
+    safety -> ref_fuga;
+    rendimiento -> ref_ingesta;
+    disponibilidad -> ref_resiliencia;
+    modificabilidad -> ref_sectores;
+    modificabilidad -> ref_hardware;
+    seguridad -> ref_aislamiento;
+
+    // Escenarios (Hojas) con (Importancia, Dificultad)
+    qa02 [label="QA-02 (H, H) [CRÍTICO]\nCorte de red con válvula abierta:\ntemporizador local cierra válvula en\n<= 5 s sobre tiempo programado (100%)", fillcolor="#C53030", fontcolor="white"];
+    qa06 [label="QA-06 (M, H)\nFuga por falla mecánica de válvula:\nalerta P0 emitida en <= 15 s\nhacia válvula matriz y PWA", fillcolor="#ED8936", fontcolor="white"];
+    qa01 [label="QA-01 (H, M)\nIngesta de 2000 parcelas (67 req/s):\nlatencia p95 <= 500 ms en consultas\ny registro de humedad en el VPS", fillcolor="#ED8936", fontcolor="white"];
+    qa03 [label="QA-03 (H, M)\nGateway de campo inestable:\ncircuit breaker + outbox transaccional,\n0 comandos perdidos en 24 h", fillcolor="#ED8936", fontcolor="white"];
+    qa04 [label="QA-04 (M, M)\nNueva comisión de regantes:\nalta de sector y cuotas con RLS\nen <= 1 h-persona sin alterar código", fillcolor="#48BB78", fontcolor="white"];
+    qa07 [label="QA-07 (M, L)\nNuevo protocolo sensor (LoRaWAN):\nincorporación con patrón Adapter\nen <= 2 días-persona sin tocar dominio", fillcolor="#38B2AC", fontcolor="white"];
+    qa05 [label="QA-05 (H, M) [Corregido IA]\nAislamiento multi-sector:\nRow-Level Security y JWT impiden acceso\ncruzado: 0 violaciones en 10k tests", fillcolor="#ED8936", fontcolor="white"];
+
+    ref_cierre -> qa02;
+    ref_fuga -> qa06;
+    ref_ingesta -> qa01;
+    ref_resiliencia -> qa03;
+    ref_sectores -> qa04;
+    ref_hardware -> qa07;
+    ref_aislamiento -> qa05;
+}
