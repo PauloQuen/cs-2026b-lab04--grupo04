@@ -230,3 +230,33 @@ Luego escribe un script de verificación reutilizable que compruebe estos puntos
 tools/. El script debe derivar del documento los datos del caso (actores, módulos, totales),
 no tenerlos fijos, para que sirva para el siguiente caso.
 ```
+
+
+---
+
+# Lab 08: Diseño Guiado por Atributos de Calidad (ADD 3.0), Evaluación ATAM-lite y Fitness Functions
+
+> **Sesión de trabajo:** 26/10/2026 – 31/10/2026  
+> **Crecimiento:** Escalamiento de 50 a 2000 parcelas y protección estricta de válvulas ante fallas  
+> **Regla de oro:** *"La IA propone, el equipo decide con evidencia empírica. Ninguna táctica se adopta sin escenario prioritario, medición cuantitativa y registro en ADR."*
+
+---
+
+## Tabla de Interacciones de Lab 08
+
+| # | Herramienta | Prompt (resumen) | Propuesta de la IA | Verificación Técnica y Evidencia del Equipo | Decisión del Equipo |
+|---|-------------|------------------|---------------------|---------------------------------------------|---------------------|
+| **6** | Asistente IA | **Prompt IA 1 (Árbol de Utilidad):** Escenarios para ChacraSmart Majes ante 2000 parcelas en 4 atributos. | Generó 8 escenarios. Calificó QA-05 (Aislamiento multi-sector) como `(H, H)`, sugiriendo soluciones SaaS de particionamiento complejas. | **Verificación en PostgreSQL 16:** PostgreSQL soporta nativamente *Row-Level Security* (RLS). Se configuró una política RLS vinculada al JWT en menos de 1 hora. La dificultad técnica es media, no alta. | **Corregida:** Calificación ajustada a `(H, M)` en el árbol de utilidad y registrada en ADR-008. |
+| **7** | Asistente IA | **Prompt IA 2 (Tácticas QA-01):** Tácticas para absorber 67 req/s continuas y 120 req/s pico en el VPS único. | Propuso migrar inmediatamente a **Microservicios con Apache Kafka y clúster Kubernetes** para streaming de telemetría. | **Simulación M/G/c y Restricciones:** Violaba el plazo de 1 mes (R-01), 2 desarrolladores (R-02) y la memoria del VPS de 4 GB (R-03). La simulación demostró que el monolito con índices y Redis atiende 120 req/s con $p95 = 8.9\text{ ms}$ y CPU $< 20\%$. | ❌ **Rechazada rotundamente con argumentos y simulación.** |
+| **8** | Asistente IA | **Prompt IA 2 (Tácticas QA-01):** "La caché Redis sola es suficiente sin tocar la base de datos". | La IA argumentó que con Redis con TTL 60 s no era necesario crear índices en PostgreSQL. | **Curva de Sensibilidad en Simulación:** Con caché fría ($0\%$ aciertos) a 120 req/s, la base sin índices colapsó con $p95 = 39\text{ }846\text{ ms}$. Por debajo de $15\%$ de aciertos, viola QA-01. | ⚠️ **Corregida:** Se adoptó la combinación de **Índice B-Tree + Caché**. El índice cubre el arranque en frío y la caché da margen. |
+| **9** | Asistente IA | **Prompt IA 2 (Tácticas QA-02):** Falla segura de válvulas ante caída de telecomunicaciones rurales en Majes. | Propuso temporizador en el servidor y reintentos exponenciales hacia el controlador de campo. | **Simulación Monte Carlo (FMEA):** Si se cae la antena celular rural mientras la válvula riega, la orden de cierre nunca llega (144 válvulas abiertas en 1000 operaciones). Los reintentos solo saturan la red. | ❌ **Rechazada por violación crítica de Safety.** Se impuso temporizador local autónomo en hardware y solenoide NC (ADR-007). |
+| **10** | Asistente IA | **Prompt IA 3 (Evaluador ATAM-lite):** Evaluación adversaria de la arquitectura propuesta. | Identificó puntos de sensibilidad válidos (tasa de aciertos de caché y reloj RTC), pero **afirmó como riesgo crítico que Celery colapsaría ante las 2000 parcelas [FALSO POSITIVO]**. | **Auditoría de Arquitectura C4:** Falso positivo. En el modelo C4 de ChacraSmart, la telemetría se procesa de forma directa por la API REST hacia PostgreSQL y Redis. Celery **solo** envía notificaciones SMS/WhatsApp por excepción y vacía la tabla outbox (tasa real medida $< 5\text{ tareas/minuto}$). | ❌ **Refutada con evidencia arquitectónica (Falso Positivo de la IA).** |
+| **11** | Asistente IA | **Prompt IA 2 (Tácticas QA-03):** Almacenamiento de cola de comandos diferidos (outbox). | Propuso almacenar la cola de comandos diferidos en listas de memoria Redis (`LPUSH`/`RPOP`). | **Análisis de Resiliencia ante Reinicios:** Si el VPS se reinicia abruptamente durante un corte de energía, la memoria RAM de Redis se pierde antes de sincronizar al disco RDB, perdiendo órdenes de riego. | ⚠️ **Corregida:** Se diseñó la tabla outbox directamente en PostgreSQL con garantía ACID y procesamiento transaccional por el worker. |
+
+---
+
+## Síntesis de Decisiones de Lab 08
+
+- **Aceptadas sin cambios:** 0
+- **Corregidas con evidencia:** 3 (Interacciones 6, 8, 11)
+- **Rechazadas con evidencia cuantitativa / Falsos positivos refutados:** 3 (Interacciones 7, 9, 10)
