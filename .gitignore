@@ -16,3 +16,6 @@ informes/
 # Caché de Python (bytecode)
 __pycache__/
 *.pyc
+
+# Guías de laboratorio en PDF
+*.pdf
