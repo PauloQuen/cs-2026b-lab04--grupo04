@@ -55,7 +55,7 @@ def reset_section_cell(cell, section_title: str):
     p = cell.paragraphs[0]
     p.paragraph_format.space_before = Pt(4)
     p.paragraph_format.space_after = Pt(6)
-    p.paragraph_format.keep_with_next = True
+    p.paragraph_format.keep_with_next = False
     r = p.add_run(section_title)
     r.font.name = "Calibri"
     r.font.size = Pt(12)
@@ -105,28 +105,41 @@ def add_cell_heading_2(cell, text):
     return p
 
 
-def add_cell_p(cell, text, bold_prefix=None, space_after=3.5):
-    p = cell.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-    p.paragraph_format.space_before = Pt(1.5)
-    p.paragraph_format.space_after = Pt(space_after)
-    p.paragraph_format.line_spacing = 1.15
-    if bold_prefix:
-        rp = p.add_run(bold_prefix)
-        rp.font.name = "Calibri"
-        rp.font.size = Pt(10.5)
-        rp.font.bold = True
-        rp.font.color.rgb = COLOR_BLACK
-    rb = p.add_run(text)
-    rb.font.name = "Calibri"
-    rb.font.size = Pt(10.5)
-    rb.font.color.rgb = COLOR_TEXT
-    return p
+def add_cell_p(cell, text, bold_prefix=None, space_after=3.5, justify=True):
+    """Agrega uno o más párrafos reales dividiendo por saltos de línea para evitar espacios estirados."""
+    lineas = text.split("\n")
+    last_p = None
+    for idx, linea in enumerate(lineas):
+        linea_clean = linea.strip()
+        if not linea_clean:
+            continue
+        p = cell.add_paragraph()
+        # Evitar estiramiento de palabras en viñetas, listas numeradas o líneas con identificadores largos
+        es_lista = linea_clean.startswith("• ") or (len(linea_clean) > 2 and linea_clean[0].isdigit() and linea_clean[1] in (".", ")"))
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT if (not justify or es_lista) else WD_ALIGN_PARAGRAPH.JUSTIFY
+        p.paragraph_format.space_before = Pt(1.5)
+        p.paragraph_format.space_after = Pt(space_after if idx == len(lineas) - 1 else 2.5)
+        p.paragraph_format.line_spacing = 1.15
+        if es_lista:
+            p.paragraph_format.left_indent = Inches(0.18)
+
+        if idx == 0 and bold_prefix:
+            rp = p.add_run(bold_prefix)
+            rp.font.name = "Calibri"
+            rp.font.size = Pt(10.5)
+            rp.font.bold = True
+            rp.font.color.rgb = COLOR_BLACK
+        rb = p.add_run(linea_clean)
+        rb.font.name = "Calibri"
+        rb.font.size = Pt(10.5)
+        rb.font.color.rgb = COLOR_TEXT
+        last_p = p
+    return last_p
 
 
 def add_cell_bullet(cell, text, bold_prefix=None):
     p = cell.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     p.paragraph_format.left_indent = Inches(0.22)
     p.paragraph_format.space_before = Pt(1)
     p.paragraph_format.space_after = Pt(2.5)
@@ -162,21 +175,34 @@ def add_cell_callout(cell, title, text, kind="info"):
     c = tbl.cell(0, 0)
     c.width = Inches(6.2)
     apply_cell_styles(c, fill_hex=fill_hex, border_left_hex=border_hex)
-    p = c.paragraphs[0]
-    p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
-    p.paragraph_format.space_before = Pt(1.5)
-    p.paragraph_format.space_after = Pt(1.5)
-    p.paragraph_format.line_spacing = 1.12
     if title:
-        rt = p.add_run(title + "\n")
+        p = c.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p.paragraph_format.space_before = Pt(1.5)
+        p.paragraph_format.space_after = Pt(2.0)
+        rt = p.add_run(title)
         rt.font.name = "Arial"
         rt.font.size = Pt(9.5)
         rt.font.bold = True
         rt.font.color.rgb = COLOR_PRIMARY
-    rb = p.add_run(text)
-    rb.font.name = "Calibri"
-    rb.font.size = Pt(9.5)
-    rb.font.color.rgb = COLOR_TEXT
+        start_new = True
+    else:
+        start_new = False
+
+    for idx, linea in enumerate(text.split("\n")):
+        linea_clean = linea.strip()
+        if not linea_clean:
+            continue
+        p = c.add_paragraph() if (start_new or idx > 0) else c.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY
+        p.paragraph_format.space_before = Pt(1)
+        p.paragraph_format.space_after = Pt(1.5)
+        p.paragraph_format.line_spacing = 1.12
+        rb = p.add_run(linea_clean)
+        rb.font.name = "Calibri"
+        rb.font.size = Pt(9.5)
+        rb.font.color.rgb = COLOR_TEXT
+
     sp = cell.add_paragraph()
     sp.paragraph_format.space_after = Pt(2)
 
@@ -348,6 +374,7 @@ def main():
     # 2. TABLA 1 — PARTE I: SOLUCIÓN DE EJERCICIOS / PROBLEMAS (E1 – E8)
     # =========================================================================
     t1 = doc.tables[1]
+    t1.rows[0].cells[0].paragraphs[0].paragraph_format.keep_with_next = True
     c_ej = t1.rows[1].cells[0]
     reset_section_cell(c_ej, "SOLUCIÓN DE EJERCICIOS/PROBLEMAS")
 
