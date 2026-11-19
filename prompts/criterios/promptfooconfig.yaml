@@ -3,6 +3,12 @@ description: "Evaluación automatizada de criterios de aceptación Gherkin — C
 prompts:
   - id: file://v1.txt
     label: v1
+  - id: file://v2.txt
+    label: v2
+  - id: file://v3.txt
+    label: v3
+  - id: file://v3.1.txt
+    label: v3.1
 
 providers:
   - id: file://../proveedor_grabado.py

@@ -1,0 +1,9 @@
+{
+  "historia_id": "H8",
+  "invest_ok": false,
+  "preguntas": [
+    "Esta solicitud describe una solución técnica (PostgreSQL particionado y caché Redis) en lugar de una necesidad del usuario: ¿qué problema de negocio o consulta lenta requiere resolver el agricultor o el técnico?",
+    "¿Cuál es la frecuencia de lecturas esperada o el tiempo máximo aceptable para consultar el historial?"
+  ],
+  "escenarios": []
+}

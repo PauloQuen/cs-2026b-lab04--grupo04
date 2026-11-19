@@ -1,0 +1,29 @@
+{
+  "historia_id": "H9",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Filtro exitoso por sector de riego",
+      "tipo": "exito",
+      "dado": [
+        "parcelas registradas en los sectores El Pedregal y San Camilo de Majes"
+      ],
+      "cuando": "filtro el listado por el sector \"El Pedregal\"",
+      "entonces": [
+        "veo únicamente las parcelas pertenecientes al sector \"El Pedregal\""
+      ]
+    },
+    {
+      "titulo": "Sector sin parcelas registradas",
+      "tipo": "borde",
+      "dado": [
+        "no existen parcelas asignadas al sector \"La Colina\""
+      ],
+      "cuando": "filtro por \"La Colina\"",
+      "entonces": [
+        "veo el listado vacío con el mensaje \"No hay parcelas en este sector\""
+      ]
+    }
+  ]
+}

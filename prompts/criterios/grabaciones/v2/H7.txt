@@ -1,0 +1,29 @@
+{
+  "historia_id": "H7",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Carga rápida de aplicación",
+      "tipo": "exito",
+      "dado": [
+        "un agricultor abre la aplicación en su celular"
+      ],
+      "cuando": "navega por la pantalla principal",
+      "entonces": [
+        "la aplicación responde rápido y de forma intuitiva"
+      ]
+    },
+    {
+      "titulo": "Error de carga lenta",
+      "tipo": "error",
+      "dado": [
+        "una conexión lenta en el campo"
+      ],
+      "cuando": "el sistema tarda demasiado",
+      "entonces": [
+        "muestra un mensaje de espera"
+      ]
+    }
+  ]
+}

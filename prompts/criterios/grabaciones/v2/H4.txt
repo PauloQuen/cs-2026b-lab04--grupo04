@@ -1,0 +1,29 @@
+{
+  "historia_id": "H4",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Apertura remota exitosa",
+      "tipo": "exito",
+      "dado": [
+        "la válvula V-01 está cerrada y en línea"
+      ],
+      "cuando": "envío la orden de apertura mediante una peticion HTTP al controlador",
+      "entonces": [
+        "la válvula pasa a estado ABIERTA"
+      ]
+    },
+    {
+      "titulo": "Cierre seguro por corte de red",
+      "tipo": "error",
+      "dado": [
+        "la válvula V-01 está abierta con un tiempo de 20 minutos"
+      ],
+      "cuando": "se pierde la conexión antes de cumplir el tiempo",
+      "entonces": [
+        "el controlador local cierra la válvula al cumplirse los 20 minutos"
+      ]
+    }
+  ]
+}

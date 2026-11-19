@@ -1,0 +1,29 @@
+{
+  "historia_id": "H8",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Guardar en tabla PostgreSQL particionada",
+      "tipo": "exito",
+      "dado": [
+        "la tabla PostgreSQL y el caché Redis activos"
+      ],
+      "cuando": "llegan 1000 lecturas de humedad",
+      "entonces": [
+        "se almacenan en la partición del sector correspondiente"
+      ]
+    },
+    {
+      "titulo": "Caída de caché Redis",
+      "tipo": "error",
+      "dado": [
+        "el servicio Redis fuera de línea"
+      ],
+      "cuando": "se consulta la humedad",
+      "entonces": [
+        "el sistema consulta directamente la base de datos"
+      ]
+    }
+  ]
+}

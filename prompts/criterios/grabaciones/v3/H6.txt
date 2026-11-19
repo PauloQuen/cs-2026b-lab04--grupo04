@@ -1,0 +1,30 @@
+{
+  "historia_id": "H6",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Registro completo de parcela y dispositivos",
+      "tipo": "exito",
+      "dado": [
+        "un técnico autorizado en la vista de dispositivos"
+      ],
+      "cuando": "registra la parcela Lote E con un sensor y una válvula válidos",
+      "entonces": [
+        "la parcela y sus dispositivos quedan visibles mostrando si están en línea o fuera de línea"
+      ]
+    },
+    {
+      "titulo": "Rechazo de identificador duplicado",
+      "tipo": "error",
+      "dado": [
+        "una válvula ya registrada con código V-10"
+      ],
+      "cuando": "el técnico intenta registrar otra válvula con el mismo código V-10",
+      "entonces": [
+        "el sistema rechaza el registro",
+        "muestra el aviso \"El dispositivo V-10 ya existe\""
+      ]
+    }
+  ]
+}

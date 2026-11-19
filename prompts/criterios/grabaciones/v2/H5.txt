@@ -1,0 +1,31 @@
+```json
+{
+  "historia_id": "H5",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Alerta por falta de agua",
+      "tipo": "exito",
+      "dado": [
+        "una parcela con riego programado y sensor de flujo en cero"
+      ],
+      "cuando": "se detecta ausencia de agua durante 2 minutos",
+      "entonces": [
+        "el agricultor recibe un aviso en su celular indicando la parcela afectada"
+      ]
+    },
+    {
+      "titulo": "Sin cobertura celular temporal",
+      "tipo": "borde",
+      "dado": [
+        "una alerta generada mientras el operador móvil no responde"
+      ],
+      "cuando": "se intenta enviar el aviso",
+      "entonces": [
+        "el sistema reintenta el envío hasta confirmar entrega"
+      ]
+    }
+  ]
+}
+```

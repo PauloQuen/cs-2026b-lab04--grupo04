@@ -1,0 +1,30 @@
+{
+  "historia_id": "H3",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Programación de riego exitosa",
+      "tipo": "exito",
+      "dado": [
+        "la parcela Lote C tiene una válvula disponible en línea"
+      ],
+      "cuando": "programo un riego para las 22:00 por 30 minutos",
+      "entonces": [
+        "la programación queda registrada en estado PENDIENTE"
+      ]
+    },
+    {
+      "titulo": "Duración supera el límite seguro",
+      "tipo": "error",
+      "dado": [
+        "una válvula con apertura máxima segura de 60 minutos"
+      ],
+      "cuando": "intento programar un riego de 90 minutos",
+      "entonces": [
+        "el sistema rechaza la programación",
+        "muestra el límite máximo de 60 minutos"
+      ]
+    }
+  ]
+}

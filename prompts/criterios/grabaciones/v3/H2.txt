@@ -1,0 +1,29 @@
+{
+  "historia_id": "H2",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Consulta con historial disponible",
+      "tipo": "exito",
+      "dado": [
+        "la parcela Lote B tiene lecturas en los últimos 7 días"
+      ],
+      "cuando": "abro el detalle de humedad de la parcela",
+      "entonces": [
+        "veo la humedad actual y el historial diario de los últimos 7 días"
+      ]
+    },
+    {
+      "titulo": "Parcela sin lecturas previas",
+      "tipo": "borde",
+      "dado": [
+        "una parcela recién registrada sin mediciones"
+      ],
+      "cuando": "consulto su humedad actual",
+      "entonces": [
+        "veo el aviso \"Sin lecturas registradas aún\""
+      ]
+    }
+  ]
+}

@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ContratoCriteriosAceptacion",
   "description": "Contrato de salida obligatorio para la generación de criterios de aceptación Gherkin en ChacraSmart Majes.",
   "type": "object",

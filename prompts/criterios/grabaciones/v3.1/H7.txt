@@ -1,0 +1,9 @@
+{
+  "historia_id": "H7",
+  "invest_ok": false,
+  "preguntas": [
+    "¿Qué operación específica debe ser rápida (por ejemplo, consultar humedad o abrir una válvula) y en qué tiempo máximo en segundos?",
+    "¿Qué criterios concretos permiten verificar que la interfaz es utilizable por agricultores en campo (tamaño de botones, pasos máximos)?"
+  ],
+  "escenarios": []
+}

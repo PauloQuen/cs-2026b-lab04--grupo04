@@ -1,0 +1,29 @@
+{
+  "historia_id": "H4",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Apertura remota exitosa",
+      "tipo": "exito",
+      "dado": [
+        "la válvula V-01 de la parcela Lote A está cerrada y en línea"
+      ],
+      "cuando": "solicito abrir la válvula por 20 minutos y el sistema envía el mensaje por protocolo MQTT",
+      "entonces": [
+        "la válvula confirma apertura y cambia a estado ABIERTA"
+      ]
+    },
+    {
+      "titulo": "Cierre seguro ante pérdida de conexión",
+      "tipo": "borde",
+      "dado": [
+        "la válvula V-01 está abierta con una duración programada de 20 minutos"
+      ],
+      "cuando": "se interrumpe la conexión entre el servidor y la parcela durante el riego",
+      "entonces": [
+        "la válvula se cierra automáticamente al cumplirse los 20 minutos sin superar 5 segundos extra"
+      ]
+    }
+  ]
+}

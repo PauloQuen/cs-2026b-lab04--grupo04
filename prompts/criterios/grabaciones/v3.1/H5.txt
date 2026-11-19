@@ -1,0 +1,29 @@
+{
+  "historia_id": "H5",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Envío de alerta por falla de válvula",
+      "tipo": "exito",
+      "dado": [
+        "la válvula V-02 no confirma el cierre tras finalizar el tiempo"
+      ],
+      "cuando": "el sistema detecta la anomalía de cierre",
+      "entonces": [
+        "el agricultor recibe una alerta en su celular indicando falla en V-02"
+      ]
+    },
+    {
+      "titulo": "Reintento ante indisponibilidad temporal del aviso",
+      "tipo": "borde",
+      "dado": [
+        "una alerta crítica generada para la parcela Lote B"
+      ],
+      "cuando": "el primer intento de envío de aviso al celular falla",
+      "entonces": [
+        "el sistema reintenta la entrega y conserva el registro de la alerta"
+      ]
+    }
+  ]
+}

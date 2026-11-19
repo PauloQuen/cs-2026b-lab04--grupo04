@@ -1,0 +1,31 @@
+{
+  "historia_id": "H1",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Lectura de humedad válida",
+      "tipo": "exito",
+      "dado": [
+        "un sensor activo asignado a la parcela Lote A"
+      ],
+      "cuando": "el sensor reporta una humedad de 18.5%",
+      "entonces": [
+        "el sistema registra la lectura con fecha y hora",
+        "la humedad actual muestra 18.5%"
+      ]
+    },
+    {
+      "titulo": "Lectura fuera de rango",
+      "tipo": "error",
+      "dado": [
+        "un sensor activo asignado a la parcela Lote A"
+      ],
+      "cuando": "llega una lectura corrupta de 145%",
+      "entonces": [
+        "el sistema descarta la medición",
+        "registra una alerta de lectura inválida"
+      ]
+    }
+  ]
+}

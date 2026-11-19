@@ -1,0 +1,30 @@
+{
+  "historia_id": "H4",
+  "invest_ok": true,
+  "preguntas": [],
+  "escenarios": [
+    {
+      "titulo": "Apertura remota exitosa",
+      "tipo": "exito",
+      "dado": [
+        "la válvula V-01 de la parcela Lote A está cerrada y en línea"
+      ],
+      "cuando": "solicito abrir la válvula durante 20 minutos",
+      "entonces": [
+        "el controlador de parcela confirma la apertura",
+        "la válvula pasa a estado ABIERTA"
+      ]
+    },
+    {
+      "titulo": "Cierre seguro ante pérdida de conexión",
+      "tipo": "borde",
+      "dado": [
+        "la válvula V-01 está abierta con una duración programada de 20 minutos"
+      ],
+      "cuando": "se interrumpe la conexión con la parcela durante el riego",
+      "entonces": [
+        "el controlador local cierra la válvula automáticamente al cumplirse los 20 minutos sin superar 5 segundos extra"
+      ]
+    }
+  ]
+}
