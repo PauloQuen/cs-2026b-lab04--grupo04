@@ -19,3 +19,8 @@ __pycache__/
 
 # Guías de laboratorio en PDF
 *.pdf
+
+# Node.js / promptfoo (Lab 09)
+node_modules/
+.promptfoo/
+package-lock.json
