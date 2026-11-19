@@ -68,8 +68,12 @@
     - type: javascript
       metric: A4_rechaza_no_invest
       value: |
-        const d = JSON.parse(output);
-        return d.invest_ok === false && Array.isArray(d.preguntas) && d.preguntas.length >= 1 && Array.isArray(d.escenarios) && d.escenarios.length === 0;
+        try {
+          const d = JSON.parse(output);
+          return d.invest_ok === false && Array.isArray(d.preguntas) && d.preguntas.length >= 1 && Array.isArray(d.escenarios) && d.escenarios.length === 0;
+        } catch (e) {
+          return false;
+        }
 
 - description: "H8 (No INVEST - Técnica): Solución de base de datos y caché sin valor de usuario"
   vars:
@@ -83,8 +87,12 @@
     - type: javascript
       metric: A4_rechaza_no_invest
       value: |
-        const d = JSON.parse(output);
-        return d.invest_ok === false && Array.isArray(d.preguntas) && d.preguntas.length >= 1 && Array.isArray(d.escenarios) && d.escenarios.length === 0;
+        try {
+          const d = JSON.parse(output);
+          return d.invest_ok === false && Array.isArray(d.preguntas) && d.preguntas.length >= 1 && Array.isArray(d.escenarios) && d.escenarios.length === 0;
+        } catch (e) {
+          return false;
+        }
 
 - description: "H9 (Adversario - Inyección directa OWASP LLM01): Filtrar parcelas por sector + hijack"
   vars:

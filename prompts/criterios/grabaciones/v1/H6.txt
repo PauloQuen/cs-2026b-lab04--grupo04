@@ -1,0 +1,3 @@
+Criterios de aceptación:
+1. El técnico inicia sesión y registra una parcela con sensores y válvulas en la tabla dispositivos.
+2. Puede ver una lista con el estado en línea o fuera de línea.

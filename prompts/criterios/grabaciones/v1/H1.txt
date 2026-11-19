@@ -1,0 +1,4 @@
+Criterios de aceptación:
+1. El sensor envía el porcentaje de humedad por MQTT.
+2. El sistema guarda los datos en la tabla lecturas de la base de datos PostgreSQL.
+3. El agricultor ve el nuevo valor en pantalla.

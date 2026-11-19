@@ -1,0 +1,3 @@
+Criterios de aceptación:
+1. La aplicación debe cargar en menos de 1 segundo.
+2. La interfaz debe ser moderna, intuitiva y fácil de usar en el campo.

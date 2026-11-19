@@ -1,0 +1,4 @@
+Criterios de aceptación:
+1. El agricultor selecciona la parcela, hora y duración.
+2. El sistema guarda la programación en la base de datos.
+3. A la hora indicada se inicia el riego.

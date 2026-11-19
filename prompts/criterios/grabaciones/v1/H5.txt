@@ -1,0 +1,3 @@
+Criterios de aceptación:
+1. Si hay falla de agua, el sistema envía una alerta por SMS.
+2. El agricultor recibe el mensaje en su teléfono.

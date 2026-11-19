@@ -1,0 +1,4 @@
+Criterios de aceptación:
+1. El usuario presiona abrir o cerrar válvula.
+2. Se envía una petición HTTP al controlador.
+3. La válvula se cierra cuando pasa el tiempo.

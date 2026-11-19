@@ -1,0 +1,3 @@
+Criterios de aceptación:
+1. Crear la tabla PostgreSQL particionada por sector_id con índices B-Tree.
+2. Configurar caché Redis para almacenar las últimas lecturas.

@@ -1,0 +1,4 @@
+Criterios de aceptación:
+1. Al ingresar a la vista de parcela, se consulta el endpoint REST de historial.
+2. Se muestra un gráfico con la humedad actual y de los últimos 7 días.
+3. El diseño debe ser atractivo y rápido.
