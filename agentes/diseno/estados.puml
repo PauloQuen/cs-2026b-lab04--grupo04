@@ -1,0 +1,44 @@
+@startuml estados-agente-chacrasmart
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam state {
+  BackgroundColor #EEF2F8
+  BorderColor #1A365D
+  ArrowColor #2B6CB0
+}
+
+title ChacraSmart Majes — Máquina de Estados del Agente ReAct (Lab 10 · E3)
+
+[*] --> INICIO : objetivo recibido
+INICIO --> DECIDIENDO : inicializar historial
+
+DECIDIENDO --> VALIDANDO_CONTRATO : modelo devuelve decisión
+
+VALIDANDO_CONTRATO --> CONTRATO_INVALIDO : [!decision_valida]
+CONTRATO_INVALIDO --> DECIDIENDO : devolver ERROR DE CONTRATO\ncomo observación
+
+VALIDANDO_CONTRATO --> FINALIZADO : ["final" in decision]
+VALIDANDO_CONTRATO --> EVALUANDO_POLITICA : ["accion" in decision]
+
+EVALUANDO_POLITICA --> LIMITE_ALCANZADO : [paso > max_pasos]
+EVALUANDO_POLITICA --> BLOQUEADO : [!accion_permitida o ruta_protegida]
+BLOQUEADO --> DECIDIENDO : devolver BLOQUEADO POR POLÍTICA\ncomo observación
+
+EVALUANDO_POLITICA --> ESPERANDO_APROBACION : [accion == "editar_archivo"\ny aprobar_edicion activa]
+EVALUANDO_POLITICA --> EJECUTANDO : [accion permitida sin espera humana]
+
+ESPERANDO_APROBACION --> EJECUTANDO : [humano responde "s"]
+ESPERANDO_APROBACION --> BLOQUEADO : [humano responde "n"]
+
+EJECUTANDO --> OBSERVANDO : resultado o excepción capturada
+OBSERVANDO --> DECIDIENDO : agregar observación al historial
+
+FINALIZADO --> [*]
+LIMITE_ALCANZADO --> [*]
+
+note right of ESPERANDO_APROBACION
+  Humano en el circuito (QA-01):
+  Un desarrollador aprueba ("s") o rechaza ("n")
+  cada edición propuesta por el agente.
+end note
+@enduml
