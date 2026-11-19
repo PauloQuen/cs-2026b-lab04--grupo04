@@ -72,13 +72,13 @@ class ProveedorGrabado(ProveedorLLM):
 
     def completar(self, prompt: str) -> str:
         self.llamadas += 1
-        # Buscar el ID de caso dentro del prompt renderizado (<historia id="H1"> o <notas id="N1"> o (H1))
-        m = re.search(r'id="([A-Za-z0-9_-]+)"', prompt)
-        if not m:
-            m = re.search(r"\b([HN]\d+)\b", prompt)
-        if not m:
+        # Usar la última coincidencia para omitir el id="EJ" del ejemplo few-shot
+        matches = re.findall(r'id="([A-Za-z0-9_-]+)"', prompt)
+        if not matches:
+            matches = re.findall(r"\b([HN]\d+)\b", prompt)
+        if not matches:
             raise ValueError("No se pudo identificar el ID del caso dentro del prompt.")
-        caso_id = m.group(1)
+        caso_id = matches[-1]
         ruta = RAIZ_PROMPTS / self.tarea / "grabaciones" / self.version / f"{caso_id}.txt"
         if not ruta.exists():
             raise FileNotFoundError(f"Grabación no encontrada: {ruta}")
