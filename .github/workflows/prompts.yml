@@ -1,0 +1,53 @@
+name: Evals de Prompts (Lab 09)
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'prompts/**'
+      - 'src/valvulas_riego/generador_*.py'
+      - 'tests/test_prompts_integracion.py'
+      - '.github/workflows/prompts.yml'
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  evaluar-prompts:
+    name: Evaluación Automatizada con promptfoo y JSON Schema
+    runs-on: ubuntu-latest
+    env:
+      PROMPTFOO_DISABLE_TELEMETRY: "1"
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar dependencias Python y promptfoo
+        run: |
+          python -m pip install --upgrade pip
+          pip install jsonschema pytest
+          npm install --no-save --no-audit --no-fund promptfoo@0.126.0
+
+      - name: Evaluar Tarea A — Criterios de aceptación (versión productiva v3.1)
+        working-directory: prompts/criterios
+        run: |
+          ../../node_modules/.bin/promptfoo eval --no-cache --filter-prompts "v3\.1"
+
+      - name: Evaluar Tarea B — Borradores de ADR (versión productiva v3)
+        working-directory: prompts/adr-borrador
+        run: |
+          ../../node_modules/.bin/promptfoo eval --no-cache --filter-prompts "v3"
+
+      - name: Ejecutar pruebas de integración en Python (ProveedorLLM + JSON Schema)
+        run: |
+          pytest -v tests/test_prompts_integracion.py
