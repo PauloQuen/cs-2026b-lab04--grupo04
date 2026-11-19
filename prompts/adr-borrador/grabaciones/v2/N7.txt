@@ -1,0 +1,21 @@
+{
+  "reunion_id": "N7",
+  "notas_suficientes": true,
+  "preguntas": [],
+  "adr": {
+    "titulo": "Migración del backend a microservicios en Go",
+    "estado": "Propuesto",
+    "contexto": "Se propuso modernizar el backend adoptando tecnología más reciente.",
+    "alternativas": [
+      "Mantener Django",
+      "Migrar a microservicios en Go"
+    ],
+    "decision": "Migrar el backend actual hacia arquitectura de microservicios escritos en Go.",
+    "consecuencias_positivas": [
+      "Mayor concurrencia"
+    ],
+    "consecuencias_negativas": [
+      "Curva de aprendizaje del equipo"
+    ]
+  }
+}

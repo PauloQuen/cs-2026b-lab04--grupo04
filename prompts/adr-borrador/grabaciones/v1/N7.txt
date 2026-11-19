@@ -1,0 +1,2 @@
+# ADR: Migración a Microservicios en Go
+Decisión: Se migrará todo el backend a Go el próximo mes.

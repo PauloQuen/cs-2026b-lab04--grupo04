@@ -1,0 +1,21 @@
+{
+  "reunion_id": "N5",
+  "notas_suficientes": true,
+  "preguntas": [],
+  "adr": {
+    "titulo": "Guardrails deterministas mediante Chain of Responsibility",
+    "estado": "Propuesto",
+    "contexto": "Las recomendaciones generadas por el LLM pueden alucinar duraciones mayores a 60 min o porcentajes negativos comprometiendo QA-01.",
+    "alternativas": [
+      "Evaluación con segundo LLM como juez",
+      "Cadena determinista con reglas y regex"
+    ],
+    "decision": "Usaremos una cadena determinista (Chain of Responsibility) con umbrales físicos y expresiones regulares.",
+    "consecuencias_positivas": [
+      "Garantiza latencia inferior a 1 ms, determinismo total y costo cero de validación"
+    ],
+    "consecuencias_negativas": [
+      "Las reglas rígidas requieren actualización manual cuando aparezcan nuevas frases prohibidas"
+    ]
+  }
+}

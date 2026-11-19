@@ -1,0 +1,9 @@
+{
+  "reunion_id": "N7",
+  "notas_suficientes": false,
+  "preguntas": [
+    "¿Qué cuello de botella o falla actual justifica evaluar una migración a microservicios en Go?",
+    "¿Qué costos, riesgos operativos y votación formal respaldan esta propuesta antes de aceptarla?"
+  ],
+  "adr": null
+}

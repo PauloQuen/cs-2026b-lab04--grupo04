@@ -1,0 +1,4 @@
+# ADR: Temporizador Local
+Contexto: Se cae la red.
+Decisión: Usar ESP32.
+Consecuencias: Funciona bien.

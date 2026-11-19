@@ -1,0 +1,2 @@
+# ADR: Guardrails IA
+Decisión: Usar reglas regex.

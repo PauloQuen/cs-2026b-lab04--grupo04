@@ -1,0 +1,21 @@
+{
+  "reunion_id": "N2",
+  "notas_suficientes": true,
+  "preguntas": [],
+  "adr": {
+    "titulo": "Protocolo MQTT con QoS 1 y buffer local para telemetría",
+    "estado": "Propuesto",
+    "contexto": "Los sensores en campo operan bajo red 3G inestable donde el polling HTTP directo falla y consume batería.",
+    "alternativas": [
+      "HTTP polling directo",
+      "MQTT QoS 1 con buffer local en gateway"
+    ],
+    "decision": "Adoptar MQTT QoS 1 con buffer local en el gateway de parcela para telemetría.",
+    "consecuencias_positivas": [
+      "Sobrevive cortes temporales de 3G sin perder lecturas ni agotar batería"
+    ],
+    "consecuencias_negativas": [
+      "Obliga a operar y monitorear un broker Mosquitto en el servidor"
+    ]
+  }
+}

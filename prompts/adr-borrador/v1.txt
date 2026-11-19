@@ -1,0 +1,1 @@
+Redacta un ADR a partir de estas notas de reunión: {{notas}}

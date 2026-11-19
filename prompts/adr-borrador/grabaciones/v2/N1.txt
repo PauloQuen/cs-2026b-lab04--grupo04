@@ -1,0 +1,21 @@
+{
+  "reunion_id": "N1",
+  "notas_suficientes": true,
+  "preguntas": [],
+  "adr": {
+    "titulo": "Temporizador de apagado seguro en controlador local ESP32",
+    "estado": "Propuesto",
+    "contexto": "La conectividad 3G en las parcelas de Majes es intermitente y QA-01 exige cerrar válvulas sin exceder 5 segundos extra.",
+    "alternativas": [
+      "Apagado desde servidor Django",
+      "Temporizador local en controlador ESP32"
+    ],
+    "decision": "Alojar el temporizador de cierre seguro directamente en el controlador local ESP32.",
+    "consecuencias_positivas": [
+      "Garantiza el cierre seguro autónomo ante pérdida total de red"
+    ],
+    "consecuencias_negativas": [
+      "Requiere actualizar firmware en campo si cambia el máximo de seguridad"
+    ]
+  }
+}

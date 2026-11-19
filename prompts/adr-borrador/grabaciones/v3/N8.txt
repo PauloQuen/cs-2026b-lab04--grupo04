@@ -1,0 +1,21 @@
+{
+  "reunion_id": "N8",
+  "notas_suficientes": true,
+  "preguntas": [],
+  "adr": {
+    "titulo": "Formato JSON estructurado para logs de auditoría de válvulas",
+    "estado": "Propuesto",
+    "contexto": "Se requiere auditar todas las aperturas de válvulas para cumplir trazabilidad de seguridad QA-01.",
+    "alternativas": [
+      "Logs en texto plano",
+      "Logs en formato JSON estructurado"
+    ],
+    "decision": "Usaremos logs en formato JSON estructurado para facilitar búsquedas y auditorías automatizadas.",
+    "consecuencias_positivas": [
+      "Facilita consultas y filtrado automático en incidentes de campo"
+    ],
+    "consecuencias_negativas": [
+      "Incrementa en aproximadamente 15% el espacio de almacenamiento en disco"
+    ]
+  }
+}

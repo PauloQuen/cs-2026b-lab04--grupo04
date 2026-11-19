@@ -1,0 +1,2 @@
+# ADR: Multitenencia
+Decisión: Row-Level Security en Postgres.

@@ -1,0 +1,21 @@
+{
+  "reunion_id": "N4",
+  "notas_suficientes": true,
+  "preguntas": [],
+  "adr": {
+    "titulo": "Aislamiento multitenencia mediante Row-Level Security en PostgreSQL",
+    "estado": "Propuesto",
+    "contexto": "Las 6 comisiones de regantes de Majes requieren aislamiento estricto de sus parcelas.",
+    "alternativas": [
+      "6 bases de datos físicas separadas",
+      "Base de datos única con Row-Level Security"
+    ],
+    "decision": "Implementar Row-Level Security por comision_id dentro de una base de datos PostgreSQL única.",
+    "consecuencias_positivas": [
+      "Reduce costos operativos y simplifica respaldos unificados"
+    ],
+    "consecuencias_negativas": [
+      "Un error al omitir el contexto de sesión del tenant podría exponer datos"
+    ]
+  }
+}

@@ -1,0 +1,2 @@
+# ADR: Sistema de Alertas
+Decisión: Usaremos Firebase Cloud Messaging para enviar alertas. TODO: definir formato.

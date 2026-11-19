@@ -1,0 +1,6 @@
+Eres el arquitecto de software de ChacraSmart Majes. Redacta un borrador de ADR en español a partir de las siguientes notas de reunión.
+
+Reunión ({{id}}): {{notas}}
+
+Responde SOLO con un JSON con esta forma:
+{"reunion_id": "...", "notas_suficientes": true, "preguntas": [], "adr": {"titulo": "...", "estado": "Propuesto", "contexto": "...", "alternativas": ["..."], "decision": "...", "consecuencias_positivas": ["..."], "consecuencias_negativas": ["..."]}}

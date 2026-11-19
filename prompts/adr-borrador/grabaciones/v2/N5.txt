@@ -1,0 +1,19 @@
+{
+  "reunion_id": "N5",
+  "notas_suficientes": true,
+  "preguntas": [],
+  "adr": {
+    "titulo": "Guardrails deterministas para el componente de IA",
+    "estado": "Propuesto",
+    "contexto": "El LLM puede alucinar duraciones peligrosas de riego >60 min o valores negativos de humedad.",
+    "alternativas": [
+      "Segundo LLM como juez",
+      "Cadena determinista de reglas y regex"
+    ],
+    "decision": "Implementar una cadena determinista (Chain of Responsibility) para validar respuestas de IA.",
+    "consecuencias_positivas": [
+      "Latencia menor a 1 ms y costo de validación cero"
+    ],
+    "consecuencias_negativas": []
+  }
+}

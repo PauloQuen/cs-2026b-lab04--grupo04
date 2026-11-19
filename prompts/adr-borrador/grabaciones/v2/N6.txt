@@ -1,0 +1,21 @@
+{
+  "reunion_id": "N6",
+  "notas_suficientes": true,
+  "preguntas": [],
+  "adr": {
+    "titulo": "Selección de herramienta de alertas y reportes",
+    "estado": "Propuesto",
+    "contexto": "El equipo necesita enviar alertas y reportes a los agricultores de Majes.",
+    "alternativas": [
+      "SMS",
+      "Correo electrónico"
+    ],
+    "decision": "Usaremos una herramienta estándar de mensajería para alertas (TODO: definir proveedor).",
+    "consecuencias_positivas": [
+      "Permite enviar avisos rápidos"
+    ],
+    "consecuencias_negativas": [
+      "Pendiente de definir costo por mensaje"
+    ]
+  }
+}

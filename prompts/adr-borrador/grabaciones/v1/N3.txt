@@ -1,0 +1,2 @@
+# ADR: Base de datos
+Decisión: Usaremos PostgreSQL particionado y Redis.

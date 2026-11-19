@@ -1,0 +1,9 @@
+{
+  "reunion_id": "N6",
+  "notas_suficientes": false,
+  "preguntas": [
+    "¿Qué problema operativo o atributo de calidad motiva el cambio en alertas y reportes?",
+    "¿Qué alternativas concretas se evaluaron y cuál fue la decisión acordada por el equipo?"
+  ],
+  "adr": null
+}

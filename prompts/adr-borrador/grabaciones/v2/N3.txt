@@ -1,0 +1,21 @@
+{
+  "reunion_id": "N3",
+  "notas_suficientes": true,
+  "preguntas": [],
+  "adr": {
+    "titulo": "PostgreSQL particionado y caché Redis para series de humedad",
+    "estado": "Propuesto",
+    "contexto": "El crecimiento a 2000 parcelas con lecturas cada 15s exige mantener latencia p95 <= 500ms.",
+    "alternativas": [
+      "TimescaleDB",
+      "PostgreSQL particionado por mes con índices B-Tree y Redis"
+    ],
+    "decision": "Usar PostgreSQL particionado por mes con índices B-Tree y caché Redis para lecturas recientes.",
+    "consecuencias_positivas": [
+      "Aprovecha la experiencia actual del equipo evitando nueva tecnología en el MVP"
+    ],
+    "consecuencias_negativas": [
+      "Aumenta la complejidad de mantener políticas de invalidación de caché"
+    ]
+  }
+}

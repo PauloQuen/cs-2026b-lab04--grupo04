@@ -1,0 +1,3 @@
+# ADR: MQTT
+Contexto: Red 3G inestable.
+Decisión: Usar MQTT en lugar de HTTP.
