@@ -1,0 +1,16 @@
+[
+  {
+    "pensamiento": "Como planificador de solo lectura, leo ISSUE-02.md y verifico las firmas con mapa_repo para trazar un plan conciso.",
+    "accion": "leer_archivo",
+    "args": {"ruta": "issues/ISSUE-02.md", "inicio": 1, "fin": 20}
+  },
+  {
+    "pensamiento": "Ubico iniciar_riego_en_turno con mapa_repo.",
+    "accion": "mapa_repo",
+    "args": {"subdir": "src/valvulas_riego"}
+  },
+  {
+    "pensamiento": "Tengo el diagnóstico claro; devuelvo el plan al orquestador.",
+    "final": "Plan ISSUE-02: (1) Leer operaciones_campo.py; (2) Validar solicitante_id == parcela_propietario_id == turno_asignado_id lanzando PermissionError; (3) Verificar pytest y diff limpio."
+  }
+]
