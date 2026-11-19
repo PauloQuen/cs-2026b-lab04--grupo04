@@ -16,12 +16,13 @@ def procesar_latido_controlador(
     if not valvula_abierta:
         return {"estado": "CERRADA", "cerrada": True, "motivo": "ya_cerrada"}
 
-    # Bug ISSUE-01: si se pierde conexión (> 10 s), espera indebidamente al servidor
+    # QA-01 / ADR-003: al cumplirse el tiempo, el temporizador local cierra la válvula aunque falte conexión
+    if segundos_transcurridos_s >= tiempo_programado_s:
+        motivo = "cierre_seguro_local" if segundos_sin_conexion > 10 else "tiempo_cumplido"
+        return {"estado": "CERRADA", "cerrada": True, "motivo": motivo}
+
     if segundos_sin_conexion > 10:
         return {"estado": "ABIERTA", "cerrada": False, "motivo": "esperando_servidor"}
-
-    if segundos_transcurridos_s >= tiempo_programado_s:
-        return {"estado": "CERRADA", "cerrada": True, "motivo": "tiempo_cumplido"}
 
     return {"estado": "ABIERTA", "cerrada": False, "motivo": "riego_en_curso"}
 

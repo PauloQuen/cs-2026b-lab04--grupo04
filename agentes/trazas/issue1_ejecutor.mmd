@@ -1,0 +1,27 @@
+sequenceDiagram
+    title Trayectoria
+    participant M as Modelo (LLM)
+    participant C as Contrato + Política
+    participant H as Herramientas (Sandbox)
+    Note over M,H: Turno de ejecutor_issue1
+    M->>C: Paso 1: leer_archivo(ruta='issues/ISSUE-01.md', inicio=1, fin=30)
+    C->>H: Ejecutar leer_archivo
+    H-->>M: Observación
+    M-x C: Paso 2: JSON inválido (rechazado por contrato)
+    C-->>M: ERROR DE CONTRATO
+    M->>C: Paso 3: ejecutar_pruebas(objetivo='tests/test_issues_l)
+    C->>H: Ejecutar ejecutar_pruebas
+    H-->>M: Observación
+    M->>C: Paso 4: leer_archivo(ruta='src/valvulas_riego/, inicio=1, fin=35)
+    C->>H: Ejecutar leer_archivo
+    H-->>M: Observación
+    M->>C: Paso 5: editar_archivo(ruta='src/valvulas_riego/, antes='    # Bug ISSUE-01:, despues='    # QA-01 / ADR-0)
+    C->>H: Ejecutar editar_archivo
+    H-->>M: Observación
+    M->>C: Paso 6: ejecutar_comando(comando='python -m pytest -q)
+    C->>H: Ejecutar ejecutar_comando
+    H-->>M: Observación
+    M->>C: Paso 7: ejecutar_comando(comando='radon cc -s src/val)
+    C->>H: Ejecutar ejecutar_comando
+    H-->>M: Observación
+    M-->>C: Paso 8: Respuesta final (FINALIZADO)
