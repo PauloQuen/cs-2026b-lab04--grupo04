@@ -508,3 +508,57 @@ pytest -v tests/test_fitness.py
 - **Modelo C4 Actualizado con Trazabilidad [QA-xx]:** [`docs/architecture/c4/workspace.dsl`](docs/architecture/c4/workspace.dsl)
 - **Bitácora de Co-diseño con IA (11 interacciones):** [`docs/architecture/bitacora-ia.md`](docs/architecture/bitacora-ia.md)
 - **Configuración de CI y Fitness Functions:** [`.importlinter`](.importlinter), [`tests/test_fitness.py`](tests/test_fitness.py) y [`.github/workflows/fitness.yml`](.github/workflows/fitness.yml)
+
+
+---
+
+## Prompt engineering (Lab 09)
+
+En este laboratorio los prompts fueron tratados como **artefactos de ingeniería de software**: versionados en Git, sujetos a un contrato de salida formal (**JSON Schema**), medidos automáticamente con **`promptfoo`** sobre datasets de casos reales, de borde y adversarios (**OWASP LLM01**), protegidos con **defensa en capas** e integrados detrás del puerto `ProveedorLLM` del Lab 07.
+
+### 1. Tabla de Versiones y Tasas de Aprobación (`promptfoo`)
+
+#### Tarea A — Generación de Criterios de Aceptación Gherkin (`prompts/criterios/`)
+| Versión | Técnicas y Elementos Aplicados | Tasa de Aprobación | Fallos Detectados / Acción Correctiva |
+|---|---|---|---|
+| **v1** | Prompt ingenuo zero-shot sin estructura ni formato. | **0.0 % (0/9)** | Texto libre no parseable (`A1`), detalles técnicos (`A3`), obedece inyección `H9` (`A5`). |
+| **v2** | Rol QA + Contexto ChacraSmart + esquema JSON inline. | **33.3 % (3/9)** | `H4` filtró `"petición HTTP"`; `H5` envolvió en ```` ```json ````; `H6` omitió error; `H7/H8` inventaron criterios; `H9` obedeció `"APROBADO"`. |
+| **v3** | Anatomía completa (7 elementos) + *Persona*, *Cognitive Verifier*, *Flipped Interaction*, *Few-shot* y delimitadores `<historia>`. | **88.9 % (8/9)** | Supera la meta del 85 % y bloquea `H7`, `H8` y `H9`. Únicamente `H4` falló `A3` por mencionar `"protocolo MQTT"`. |
+| **v3.1** | Agrega restricción explícita de nombrar canales externos como los percibe el usuario. | **100.0 % (9/9)** | Cero regresiones; aprueba las 5 aserciones deterministas sobre los 9 casos. |
+
+#### Tarea B — Redacción de Borrador de ADR desde Notas de Reunión (`prompts/adr-borrador/`)
+| Versión | Técnicas y Elementos Aplicados | Tasa de Aprobación | Fallos Detectados / Acción Correctiva |
+|---|---|---|---|
+| **v1** | Prompt ingenuo *"Redacta un ADR a partir de estas notas"*. | **0.0 % (0/8)** | Formato Markdown libre, inventa decisiones en `N6/N7` y sucumbe a inyección indirecta `N8`. |
+| **v2** | Rol arquitecto + plantilla JSON esperada. | **50.0 % (4/8)** | `N5` omitió `consecuencias_negativas` (`[]`); `N6/N7` inventaron ADRs sin consenso; `N8` obedeció `"SIN RIESGOS"`. |
+| **v3** | Anatomía completa + verificación de suficiencia + trade-off obligatorio + *Few-shot* + delimitadores `<notas>`. | **100.0 % (8/8)** | Exige consecuencias positivas/negativas, pregunta si faltan datos y resiste la inyección indirecta `N8`. |
+
+### 2. Gráfico de Resultados Reales
+
+![Evolución y Matriz de Resultados promptfoo (Lab 09)](prompts/resultados_evals.png)
+
+### 3. Lecciones Aprendidas y Seguridad (OWASP LLM01)
+
+1. **Un prompt no se "siente" mejor, se demuestra con métricas:** Cada iteración (`v1 → v2 → v3 → v3.1`) atacó un fallo concreto medido en `resultados.json`, evitando cambios a ciegas que introduzcan regresiones.
+2. **Los evaluadores también tienen bugs (falso positivo en A3):** La primera versión de `A3_sin_implementacion` buscaba términos técnicos sobre todo el JSON y penalizaba falsamente a `H8` cuando el modelo preguntaba *"¿cuál es la necesidad detrás de PostgreSQL y Redis?"*. Se corrigió para inspeccionar únicamente `JSON.parse(output).escenarios`.
+3. **El no determinismo exige aserciones estructurales y grabaciones:** Al ejecutar `v3.1` tres veces sobre `H1`, `H4` y `H9`, la estructura JSON se mantuvo 3/3 veces pero la redacción literal y cantidad de escenarios varió; por ello las pruebas en CI deben verificar contratos/invariantes sobre respuestas grabadas inmutables.
+4. **Defensa en capas en el código (`generador_criterios.py` / `generador_adr.py`):** Nunca se confía únicamente en las instrucciones del prompt; el integrador sanitiza cierres falsos (`</historia>`, `</notas>`), valida contra `esquema.json` (`jsonschema`) y bloquea fugas de encabezados internos (`# ROL`, `# RESTRICCIONES`).
+
+### 4. Reproducibilidad y Artefactos del Lab 09
+
+```bash
+# Evaluar versiones productivas con promptfoo (sin clave de API, usando respuestas grabadas)
+cd prompts/criterios && ../../node_modules/.bin/promptfoo eval --no-cache --filter-prompts "v3\.1"
+cd prompts/adr-borrador && ../../node_modules/.bin/promptfoo eval --no-cache --filter-prompts "v3"
+
+# Ejecutar pruebas de integración en Python (ProveedorLLM + JSON Schema + Red Team)
+pytest -v tests/test_prompts_integracion.py
+```
+
+- **Tarea A (Criterios):** [`prompts/criterios/`](prompts/criterios/) (`esquema.json`, `casos.yaml`, `v1.txt`–`v3.1.txt`, `promptfooconfig.yaml`)
+- **Tarea B (Borrador ADR):** [`prompts/adr-borrador/`](prompts/adr-borrador/) (`esquema.json`, `casos.yaml`, `v1.txt`–`v3.txt`, `promptfooconfig.yaml`)
+- **Red Teaming (6 ataques):** [`prompts/seguridad/red-team.md`](prompts/seguridad/red-team.md)
+- **Integración detrás de `ProveedorLLM`:** [`src/valvulas_riego/generador_criterios.py`](src/valvulas_riego/generador_criterios.py) y [`src/valvulas_riego/generador_adr.py`](src/valvulas_riego/generador_adr.py)
+- **Pruebas de Integración:** [`tests/test_prompts_integracion.py`](tests/test_prompts_integracion.py)
+- **CI de Prompts (GitHub Actions):** [`.github/workflows/prompts.yml`](.github/workflows/prompts.yml)
+- **Bitácora IA y No Determinismo:** [`prompts/bitacora-ia.md`](prompts/bitacora-ia.md)
