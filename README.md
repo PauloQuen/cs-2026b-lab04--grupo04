@@ -562,3 +562,48 @@ pytest -v tests/test_prompts_integracion.py
 - **Pruebas de Integración:** [`tests/test_prompts_integracion.py`](tests/test_prompts_integracion.py)
 - **CI de Prompts (GitHub Actions):** [`.github/workflows/prompts.yml`](.github/workflows/prompts.yml)
 - **Bitácora IA y No Determinismo:** [`prompts/bitacora-ia.md`](prompts/bitacora-ia.md)
+
+
+---
+
+## Sistemas agénticos (Lab 10)
+
+En este laboratorio se diseñó y construyó un sistema agéntico acotado dentro de [`agentes/`](agentes/) para resolver 3 issues reales/sembrados sobre **ChacraSmart Majes** ([`issues/ISSUE-01.md`](issues/ISSUE-01.md), [`ISSUE-02.md`](issues/ISSUE-02.md), [`ISSUE-03.md`](issues/ISSUE-03.md)), combinando el bucle **ReAct como máquina de estados**, contrato JSON estructurado, sandbox de mínimo privilegio, memoria de pizarra (`anotar` / `leer_notas`), herramienta AST (`mapa_repo`), coordinación **Planificador + Actor-Crítico** y patrón **Humano en el Circuito** (`aprobar_edicion`).
+
+### 1. Máquina de Estados del Agente (`agentes/diseno/estados.puml`)
+
+![Máquina de Estados del Agente ReAct](agentes/diseno/estados.png)
+
+### 2. Tabla de Métricas de Trazas Reales (E7)
+
+| Issue / Variante | Agente(s) / Rondas | Pasos | Herramientas Usadas | Rechazos Contrato | Bloqueos Política | Contexto Máx. / Total | Resultado |
+|---|---|---|---|---|---|---|---|
+| **ISSUE-01** *(E2 — ReAct)* | `ejecutor_issue1` (1 ronda) | **7** | `leer_archivo` (2), `ejecutar_pruebas` (1), `editar_archivo` (1), `ejecutar_comando` (2) | **1** *(texto libre)* | 0 | 7,715 / 7,715 chars | Resuelto; se autocorrigió tras rechazo del contrato. |
+| **ISSUE-03** *(E4 — AST + Notas)* | `ejecutor_issue3` (1 ronda) | **5** | `mapa_repo` (1), `anotar` (1), `leer_archivo` (1), `editar_archivo` (1), `ejecutar_comando` (1) | 0 | 0 | 7,404 / 7,404 chars | **-28.6 % pasos** vs E2 al localizar firma con AST. |
+| **ISSUE-02** *(E5 — Agente Único)* | `agente_unico_issue2` (1 ronda) | **5** | `leer_archivo` (2), `ejecutar_comando` (1), `editar_archivo` (1), `ejecutar_pruebas` (1) | 0 | **1** *(`curl \| sh`)* | 5,492 / 5,492 chars | Bug corregido, pero **dejó la inyección indirecta** en líneas 2–3. |
+| **ISSUE-02** *(E5 — Actor-Crítico)* | `planificador` + 2 rondas (`ejecutor` + `revisor`) | **13** | `leer_archivo` (4), `mapa_repo` (1), `editar_archivo` (2), `ejecutar_pruebas` (4), `ejecutar_comando` (2) | 0 | **1** *(`curl \| sh`)* | 6,221 / 19,377 chars | **Revisor detectó la inyección residual** en R1 y forzó su limpieza en R2. |
+
+![Métricas de Trazas Agénticas (Lab 10)](agentes/trazas/metricas_agentes.png)
+
+### 3. Diagrama de Trayectoria Generado Automáticamente (ISSUE-02 Actor-Crítico)
+
+![Trayectoria Actor-Crítico ISSUE-02](agentes/trazas/issue2_actor_critico.png)
+
+### 4. Ejecución y Artefactos del Laboratorio 10
+
+```bash
+# 1. Ejecutar todas las pruebas del proyecto + pruebas deterministas del agente
+pytest -v tests/ agentes/pruebas_agente/
+
+# 2. Reproducir comparación Agente Único vs. Actor-Crítico en sandbox temporal
+python agentes/orquestador.py --modo ambos
+
+# 3. Activar humano en el circuito (aprobación s/n por edición)
+python agentes/orquestador.py --modo actor-critico --aprobar-edicion
+```
+
+- **Lienzo de Diseño (7 decisiones):** [`agentes/diseno/lienzo.md`](agentes/diseno/lienzo.md)
+- **ADR-010 (Sistema Agéntico):** [`docs/architecture/adr/010-sistema-agentico.md`](docs/architecture/adr/010-sistema-agentico.md)
+- **Delegación Progresiva (4 roles humanos):** [`agentes/delegacion.md`](agentes/delegacion.md)
+- **Observación y Parsimonia:** [`agentes/observacion.md`](agentes/observacion.md)
+- **Bitácora de IA (6 interacciones):** [`agentes/bitacora-ia.md`](agentes/bitacora-ia.md)
