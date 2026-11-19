@@ -1,0 +1,22 @@
+sequenceDiagram
+    title Trayectoria ReAct con mapa_repo y notas - ISSUE-03
+    participant M as Modelo (LLM)
+    participant C as Contrato + Política
+    participant H as Herramientas (Sandbox)
+    Note over M,H: Turno de ejecutor_issue3
+    M->>C: Paso 1: mapa_repo(subdir='src/valvulas_riego')
+    C->>H: Ejecutar mapa_repo
+    H-->>M: Observación
+    M->>C: Paso 2: anotar(texto='ISSUE-03: registrar)
+    C->>H: Ejecutar anotar
+    H-->>M: Observación
+    M->>C: Paso 3: leer_archivo(ruta='src/valvulas_riego/, inicio=40, fin=65)
+    C->>H: Ejecutar leer_archivo
+    H-->>M: Observación
+    M->>C: Paso 4: editar_archivo(ruta='src/valvulas_riego/, antes='    # Bug ISSUE-03:, despues='    if not parcela_)
+    C->>H: Ejecutar editar_archivo
+    H-->>M: Observación
+    M->>C: Paso 5: ejecutar_comando(comando='python -m pytest -q)
+    C->>H: Ejecutar ejecutar_comando
+    H-->>M: Observación
+    M-->>C: Paso 6: Respuesta final (FINALIZADO)

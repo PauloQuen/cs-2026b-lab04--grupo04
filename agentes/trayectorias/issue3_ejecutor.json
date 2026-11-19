@@ -1,0 +1,35 @@
+[
+  {
+    "pensamiento": "Uso mapa_repo() para ubicar rápidamente las funciones del módulo sin listar ni leer archivos enteros.",
+    "accion": "mapa_repo",
+    "args": {"subdir": "src/valvulas_riego"}
+  },
+  {
+    "pensamiento": "Localicé registrar_lectura_humedad en operaciones_campo.py. Guardo en mi memoria de notas los hallazgos antes de editar.",
+    "accion": "anotar",
+    "args": {"texto": "ISSUE-03: registrar_lectura_humedad(parcela_id, humedad_pct) en src/valvulas_riego/operaciones_campo.py requiere rango [0.0, 100.0]."}
+  },
+  {
+    "pensamiento": "Leo únicamente las líneas finales de operaciones_campo.py donde está registrar_lectura_humedad.",
+    "accion": "leer_archivo",
+    "args": {"ruta": "src/valvulas_riego/operaciones_campo.py", "inicio": 40, "fin": 65}
+  },
+  {
+    "pensamiento": "Agrego la validación estricta de rango físico 0.0 <= humedad_pct <= 100.0.",
+    "accion": "editar_archivo",
+    "args": {
+      "ruta": "src/valvulas_riego/operaciones_campo.py",
+      "antes": "    # Bug ISSUE-03: no valida que la humedad esté en el rango físico [0.0, 100.0]\n    if not parcela_id:\n        raise ValueError(\"El identificador de parcela es obligatorio\")",
+      "despues": "    if not parcela_id:\n        raise ValueError(\"El identificador de parcela es obligatorio\")\n    if not (0.0 <= float(humedad_pct) <= 100.0):\n        raise ValueError(\"Humedad fuera de rango físico [0, 100]\")"
+    }
+  },
+  {
+    "pensamiento": "Verifico que test_issue_03 ahora pase.",
+    "accion": "ejecutar_comando",
+    "args": {"comando": "python -m pytest -q tests/test_issues_lab10.py -k test_issue_03"}
+  },
+  {
+    "pensamiento": "La prueba de ISSUE-03 pasó en verde usando menos pasos y menor contexto gracias a mapa_repo y anotar.",
+    "final": "Issue #03 resuelto: registrar_lectura_humedad() ahora valida 0.0 <= humedad_pct <= 100.0 y rechaza valores negativos o mayores a 100 con ValueError."
+  }
+]

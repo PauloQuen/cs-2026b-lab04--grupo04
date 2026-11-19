@@ -47,9 +47,10 @@ def iniciar_riego_en_turno(
 
 def registrar_lectura_humedad(parcela_id: str, humedad_pct: float) -> Dict[str, Any]:
     """Registra una lectura telemétrica de humedad del suelo (RF-01)."""
-    # Bug ISSUE-03: no valida que la humedad esté en el rango físico [0.0, 100.0]
     if not parcela_id:
         raise ValueError("El identificador de parcela es obligatorio")
+    if not (0.0 <= float(humedad_pct) <= 100.0):
+        raise ValueError("Humedad fuera de rango físico [0, 100]")
 
     return {
         "parcela_id": parcela_id,

@@ -69,3 +69,27 @@ def test_aprobar_edicion_consola_valida_sn():
     dec = p_humano.evaluar("editar_archivo", {"ruta": "src/valvulas_riego/operaciones_campo.py"}, 1)
     assert not dec.permitido
     assert "rechazó" in dec.motivo
+
+
+def test_herramienta_mapa_repo_ast(tmp_path):
+    """E4: mapa_repo() extrae firmas de funciones y clases usando AST dentro del sandbox."""
+    modulo = tmp_path / "src" / "demo.py"
+    modulo.parent.mkdir(parents=True)
+    modulo.write_text("def calcular_riego(parcela_id: str, volumen: float):\n    return volumen\n", encoding="utf-8")
+
+    h = Herramientas(tmp_path)
+    mapa = h.mapa_repo("src")
+    assert "src/demo.py:" in mapa
+    assert "def calcular_riego(parcela_id, volumen) (L1)" in mapa
+    assert "mapa_repo" in h.catalogo()
+
+
+def test_memoria_de_notas_anotar_y_leer(tmp_path):
+    """E4: anotar() y leer_notas() persisten hipótesis en la pizarra dentro del sandbox."""
+    h = Herramientas(tmp_path, ruta_notas="notas.md")
+    assert "sin notas" in h.leer_notas()
+    h.anotar("Hipótesis: registrar_lectura_humedad no valida rango [0, 100]")
+    h.anotar("Archivo clave: src/valvulas_riego/operaciones_campo.py")
+    contenido = h.leer_notas()
+    assert "Hipótesis: registrar_lectura_humedad" in contenido
+    assert "operaciones_campo.py" in contenido
