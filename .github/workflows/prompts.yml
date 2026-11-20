@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       PROMPTFOO_DISABLE_TELEMETRY: "1"
+      PROMPTFOO_PYTHON: "python3"
 
     steps:
       - name: Checkout del repositorio
@@ -27,10 +28,10 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Configurar Node.js 20
+      - name: Configurar Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
 
       - name: Instalar dependencias Python y promptfoo
         run: |
