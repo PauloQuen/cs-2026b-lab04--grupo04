@@ -17,8 +17,15 @@ informes/
 __pycache__/
 *.pyc
 
-# Guías de laboratorio en PDF
+# Guías de laboratorio en PDF, informes Word (.docx) y scripts locales de generación/capturas
 *.pdf
+*.docx
+docs/informes/
+tools/generar_docx_*.py
+tools/generar_informe_*.py
+tools/generar_capturas_*.py
+tools/generar_diagramas_to_*.py
+*_text.txt
 
 # Node.js / promptfoo (Lab 09)
 node_modules/
